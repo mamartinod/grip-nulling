@@ -5,3 +5,6 @@ Over the year, several nulling self-calibration pipelines have been written. Wit
 1. to develop a generic nulling self-calibration pipeline with all state-of-the-art features of high-contrast nulling data reduction and validate it on existing nulling data obtained with the LBTI survey; 
 2. to improve the versatility and performance of the pipeline by adding dispersed modes and better ways to compute the error bars (e.g., MCMC);
 3. to make this software open-source so that it can serve the whole community and serve as a basis for future developments.
+
+# Acknowledgements
+NDPS is a development carried out in the context of the [SCIFY project](http://denis-defrere.com/scify.php). SCIFY has received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program (grant agreement No 8660).
