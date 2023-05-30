@@ -8,3 +8,5 @@ Over the year, several nulling self-calibration pipelines have been written. Wit
 
 # Acknowledgements
 NDPS is a development carried out in the context of the [SCIFY project](http://denis-defrere.com/scify.php). SCIFY has received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program (grant agreement No 8660).
+
+The documentation of the software package is funded by the European Union's Horizon 2020 research and innovation program under grant agreement No. 101004719
