@@ -265,10 +265,12 @@ def load_data(data, wl_edges, null_key, nulls_to_invert, *args, **kwargs):
     photo_err_data = [[], []]
     wl_scale = []
     
+    lbti_mode = False
+    piston_rms = []
+    
     if 'lbti' in kwargs:
         if kwargs['lbti'] == True:
             lbti_mode = True
-            piston_rms = []
 
     for d in data:
         with h5py.File(d, 'r') as data_file:
@@ -369,7 +371,10 @@ def load_data(data, wl_edges, null_key, nulls_to_invert, *args, **kwargs):
 
     out = {'null': null_data, 'photo': photo_data, 'wl_scale': wl_scale,
            'photo_err': photo_err_data, 'wl_idx': mask, 'Iminus': Iminus_data,
-           'Iplus': Iplus_data, 'piston_rms': piston_rms}
+           'Iplus': Iplus_data}
+    
+    if lbti_mode == True:
+        out['piston_rms'] = piston_rms
 
     if len(args) > 0:
         null_err_data = getErrorNull(out, args[0])

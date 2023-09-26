@@ -3,6 +3,7 @@
 Work in progress:
     - rethink spectral binning, inconsistencies in the code: binned wl_scale is never used in the nsc_function, accum shape is not good nor properly filled
     - ``activate_use_of_photometry'': to put in the instrument model?
+    - scattered parameters related to data between config and run (e.g. wavelength)
 """
 """
 This code determines the astrophysical null depth either by the NSC method
@@ -354,9 +355,9 @@ def nsc_function(bins0, na, mu_opd, sig_opd, *args, **kwargs):
             pdf_null = cp.histogram(rv_null, bins)[0]
 
             if normed:
-                accum[0] += pdf_null / cp.sum(pdf_null)
+                accum[k] += pdf_null / cp.sum(pdf_null)
             else:
-                accum[0] += pdf_null
+                accum[k] += pdf_null
 
             """
             Save some debug stuff
@@ -595,7 +596,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
         nb_frames_binning_photometry, nb_files_data, nb_files_dark,\
         basin_hopping_nloop = nbs
         
-   if select_optimizer == 0:
+    if select_optimizer == 0:
         normed = True
         label_optimizer = 'Chi2'
     else:
@@ -741,11 +742,12 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
         ''' Load data about the null to fit '''
         dark = gff.load_data(dark_list, (wl_min, wl_max),
                              key, nulls_to_invert,
-                             frame_binning=global_binning, lbti=True)
+                             frame_binning=global_binning, lbti=activate_lbti_mode)
         data = gff.load_data(data_list, (wl_min, wl_max), key,
                              nulls_to_invert, dark,
-                             frame_binning=global_binning, lbti=True)
+                             frame_binning=global_binning, lbti=activate_lbti_mode)
         stop_loading = time()
+        
         
         if activate_phase_sorting or activate_preview_only:
             data, idx_good_frames, i_pm = gff.sortFrames(
@@ -854,15 +856,16 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
         # =====================================================================
         # Get the distribution of the fringe blurring (piston_rms)
         # =====================================================================
-        sigma_eps = data['piston_rms']
-        sigma_eps = np.radians(sigma_eps)
-        sigma_eps *= 2200 / wl_scale0
-        # sigma_eps = 2 * np.pi / wl_scale0 * sigma_eps
-        sigma_eps = sigma_eps.reshape((1, -1))
-        # sigma_eps = sigma_eps.mean(1, keepdims=True)
-        sigma_eps_axis, sigma_eps_cdf = gff.get_dark_cdf(sigma_eps, wl_scale0)
-        sigma_eps_axis = sigma_eps_axis[0]
-        sigma_eps_cdf = sigma_eps_cdf[0]
+        if activate_lbti_mode:
+            sigma_eps = data['piston_rms']
+            sigma_eps = np.radians(sigma_eps)
+            sigma_eps *= 2200 / wl_scale0
+            # sigma_eps = 2 * np.pi / wl_scale0 * sigma_eps
+            sigma_eps = sigma_eps.reshape((1, -1))
+            # sigma_eps = sigma_eps.mean(1, keepdims=True)
+            sigma_eps_axis, sigma_eps_cdf = gff.get_dark_cdf(sigma_eps, wl_scale0)
+            sigma_eps_axis = sigma_eps_axis[0]
+            sigma_eps_cdf = sigma_eps_cdf[0]
         
         # =====================================================================
         # Compute the null
@@ -1320,7 +1323,10 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                     na_opt = popt[0][0]
                     print('******')
                     print(popt[0])
-                    print(uncertainties*chi2**0.5)
+                    if select_optimizer == 0:
+                        print(uncertainties*chi2**0.5)
+                    else:
+                        print(uncertainties)
                     print(chi2)
                     print('******')
 
@@ -1393,7 +1399,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                         ax.text(0.7, 0.8, '%.0f nm' % (
                             wl_scale[wl]), va='center', transform=ax.transAxes,
                             fontsize=labelsz)
-
+                        
                         if count % 2 == 0:
                             ax.text(-0.15, 1.1, subplot_letters[count]+')',
                                     va='center', transform=ax.transAxes,
@@ -1403,6 +1409,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                                     va='center', transform=ax.transAxes,
                                     fontsize=labelsz, fontweight='bold')
                         count += 1
+
                     plt.tight_layout(rect=[0.02, 0, 1, 1])
                     string = key + '_' + '%03d' % (basin_hopping_count) +\
                         '_' +\
