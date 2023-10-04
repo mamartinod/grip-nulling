@@ -589,7 +589,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
         activate_spectral_binning, activate_time_binning_photometry,\
         activate_use_antinull, activate_use_photometry,\
         activate_zeta, activate_remove_dark, activate_draw_model, activate_lbti_mode,\
-        select_optimizer = activates
+        select_optimizer, activate_rvu = activates
 
     map_na_sz, map_mu_sz, map_sig_sz = maps_sz
     global_binning, n_samp_total, n_samp_per_loop, nb_frames_sorting_binning,\
@@ -598,10 +598,10 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
         
     if select_optimizer == 0:
         normed = True
-        label_optimizer = 'Chi2'
+        label_optimizer = 'chi2'
     else:
         normed = False
-        label_optimizer = 'LKLH'
+        label_optimizer = 'lklh'
 
     wl_min, wl_max = wl_minmax
 
@@ -719,7 +719,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
         elif not skip_fit and not activate_preview_only and not chi2_map_switch:
             msg = 'NSC'
         elif chi2_map_switch and not activate_preview_only:
-            msg = 'Chi2map scanning'
+            msg = label_optimizer+'map scanning'
         else:
             msg = 'Unknown'
         
@@ -747,7 +747,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                              nulls_to_invert, dark,
                              frame_binning=global_binning, lbti=activate_lbti_mode)
         stop_loading = time()
-        
+
         
         if activate_phase_sorting or activate_preview_only:
             data, idx_good_frames, i_pm = gff.sortFrames(
@@ -1144,18 +1144,19 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
 
         wl_scale_saved = wl_scale.copy()
         
-        # rvu_opd = None
-        # rvu_sigmaeps = None
-        # rvu_injectionA = None
-        # rvu_injectionB = None
-        # rvu_darkm = [None]*wl_scale0.size
-        # rvu_darkp = [None]*wl_scale0.size
-        rvu_opd = cp.random.uniform(0, 1, size=n_samp_per_loop, dtype=cp.float32)
-        rvu_sigmaeps = cp.random.uniform(0, 1, size=n_samp_per_loop, dtype=cp.float32)
-        rvu_injectionA = cp.random.uniform(0, 1, size=n_samp_per_loop, dtype=cp.float32)
-        rvu_injectionB = cp.random.uniform(0, 1, size=n_samp_per_loop, dtype=cp.float32)
-        rvu_darkm = cp.random.uniform(0, 1, size=(wl_scale0.size, n_samp_per_loop), dtype=cp.float32)
-        rvu_darkp = cp.random.uniform(0, 1, size=(wl_scale0.size, n_samp_per_loop), dtype=cp.float32)
+        rvu_opd = None
+        rvu_sigmaeps = None
+        rvu_injectionA = None
+        rvu_injectionB = None
+        rvu_darkm = [None]*wl_scale0.size
+        rvu_darkp = [None]*wl_scale0.size
+        if activate_rvu == True:
+            rvu_opd = cp.random.uniform(0, 1, size=n_samp_per_loop, dtype=cp.float32)
+            rvu_sigmaeps = cp.random.uniform(0, 1, size=n_samp_per_loop, dtype=cp.float32)
+            rvu_injectionA = cp.random.uniform(0, 1, size=n_samp_per_loop, dtype=cp.float32)
+            rvu_injectionB = cp.random.uniform(0, 1, size=n_samp_per_loop, dtype=cp.float32)
+            rvu_darkm = cp.random.uniform(0, 1, size=(wl_scale0.size, n_samp_per_loop), dtype=cp.float32)
+            rvu_darkp = cp.random.uniform(0, 1, size=(wl_scale0.size, n_samp_per_loop), dtype=cp.float32)
         
         for idx_basin, basin_hopping_count in enumerate(
                 range(basin_hopping_nloop[0], basin_hopping_nloop[1])):
@@ -1217,6 +1218,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
             print('Remove dark', activate_remove_dark)
             print('Type of optimizer', select_optimizer)
             print('Normed PDF', normed)
+            print('activate_rvu', activate_rvu)
             print('')
 
             '''
@@ -1262,11 +1264,12 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                         chi2 = 1/(null_pdf.size-popt[0].size) * np.sum(
                             (null_pdf.ravel() - out)**2/null_pdf_err.ravel()**2)
                     elif select_optimizer == 1:
-                        chi2 = gff.likelihood(popt, null_pdf, nsc_function, null_axis, use_this_model=out)
+                        chi2 = gff.likelihood(popt, null_pdf, nsc_function, null_axis, n_samp_per_loop, use_this_model=out)
                         out = out.reshape((wl_scale.size, -1))
-                        out = out / out.sum(1)[:,None] * data_null.shape[1]
+                        # out = out / out.sum(1)[:,None] * data_null.shape[1]
+                        out = out / out.sum(1)[:,None] * null_pdf.sum(1)[:, None]
                     term_status = None
-                    print('chi2', chi2)
+                    print(label_optimizer, chi2)
 
                 else:
                     '''
@@ -1313,7 +1316,8 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                     elif select_optimizer == 1:
                         chi2 = res.fun
                         out = out.reshape((wl_scale.size, -1))
-                        out = out / out.sum(1)[:,None] * data_null.shape[1]                        
+                        # out = out / out.sum(1)[:,None] * data_null.shape[1]
+                        out = out / out.sum(1)[:,None] * null_pdf.sum(1)[:, None]
                     print(label_optimizer, chi2)
 
                     '''
@@ -1323,6 +1327,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                     na_opt = popt[0][0]
                     print('******')
                     print(popt[0])
+                    print(popt[1])
                     if select_optimizer == 0:
                         print(uncertainties*chi2**0.5)
                     else:
@@ -1813,8 +1818,9 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                                 value = 1/(null_pdf.size-parameters.size) * \
                                     np.sum(tmp)
                             elif select_optimizer == 1:
-                                value = gff.likelihood(parameters, null_pdf, nsc_function, null_axis, use_this_model=out)
+                                value = gff.likelihood(parameters, null_pdf, nsc_function, null_axis, n_samp_per_loop, use_this_model=out)
 
+                            print(value)
                             temp2.append([value, visi, o, s])
                         temp1.append(temp2)
                     chi2map.append(temp1)
@@ -1824,11 +1830,11 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
 
                 if activate_spectral_binning:
                     chi2_savepath = save_path + \
-                        'chi2map_%s_%03d_%.0f-%.0f_sp' % (
+                        label_optimizer+'map_%s_%03d_%.0f-%.0f_sp' % (
                             key, basin_hopping_count, wl_min, wl_max)
                 else:
                     chi2_savepath = save_path + \
-                        'chi2map_%s_%03d_%.0f-%.0f' % (key,
+                        label_optimizer+'map_%s_%03d_%.0f-%.0f' % (key,
                                                        basin_hopping_count,
                                                        wl_min,
                                                        wl_max)

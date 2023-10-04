@@ -273,6 +273,7 @@ def load_data(data, wl_edges, null_key, nulls_to_invert, *args, **kwargs):
             lbti_mode = True
 
     for d in data:
+        print(d)
         with h5py.File(d, 'r') as data_file:
             try:
                 mask = np.where(np.array(data_file['nb_frames_null%s'%(indexes[0])]) >=100)[0]
@@ -291,7 +292,6 @@ def load_data(data, wl_edges, null_key, nulls_to_invert, *args, **kwargs):
             # Fill with beam B intensity
             photo_data[1].append(np.array(data_file['p%s' % (indexes[2])])[mask])
             # Fill with beam A error
-            print(d)
             photo_err_data[0].append(
                 np.array(data_file['p%serr' % (indexes[1])])[mask])
             # Fill with beam B error
@@ -321,6 +321,7 @@ def load_data(data, wl_edges, null_key, nulls_to_invert, *args, **kwargs):
     for i in range(2):
         photo_data[i] = [selt for elt in photo_data[i] for selt in elt]
         photo_err_data[i] = [selt for elt in photo_err_data[i] for selt in elt]
+
 
     null_data = np.array(null_data)
     Iminus_data = np.array(Iminus_data)
@@ -1834,7 +1835,7 @@ def plot_lklh_map(lklhmap, mapx, mapy, mapz, argminz, stepx, stepy,
         iteration = np.arange(mapz.size)
     for i, it in zip(iteration, range(10)):
         plt.subplot(5, 2, it+1)
-        plt.imshow(np.log10(lklhmap[i]-lklhmap[i].min()),
+        plt.imshow(np.log10(lklhmap[i]-np.min(lklhmap)),
                    interpolation='none', origin='lower', aspect='auto',
                    extent=[mapx[0]-stepx/2,
                            mapx[-1]+stepx/2,
@@ -1844,7 +1845,7 @@ def plot_lklh_map(lklhmap, mapx, mapy, mapz, argminz, stepx, stepy,
         plt.colorbar()
         plt.xlabel(labelx)
         plt.ylabel(labely)
-        plt.title(labelz + ' %s' % mapz[i])
+        plt.title('LKLH ' + labelz + ' %s' % mapz[i])
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.suptitle(key)
     plt.savefig(save_name, format='png', dpi=150)
@@ -1852,11 +1853,15 @@ def plot_lklh_map(lklhmap, mapx, mapy, mapz, argminz, stepx, stepy,
 def ramanujan(n):
     stirling = n * np.log(n) - n
     rama = stirling + 1/6 * np.log(8*n**3 + 4*n**2 + n + 1/30) + np.log(np.pi)/2
-    rama[np.where(n==0)[0]] = 1
+    try:
+        rama[np.where(n==0)[0]] = 1
+    except:
+        pass
     return rama
 
 def likelihood(params, data, func_model, *args, **kwargs):
-    rama = ramanujan(data)
+    fact_n_i = ramanujan(data)
+    # fact_n = ramanujan(data.sum())
     x = args[0]
     
     if 'use_this_model' in kwargs.keys():
@@ -1864,17 +1869,27 @@ def likelihood(params, data, func_model, *args, **kwargs):
     else:
         model = func_model(x, *params, args[1:], normed=False)
         
+    # try:
+    #     model_size = args[1]
+    # except:
+    #     model_size = 1.
+        
+    # model = model / model_size
+
     if data.ndim == 2:
         model = model.reshape((data.shape[0], -1))
 
     logmodel = np.log(model)
+    logsum = np.log(np.sum(model, 1, keepdims=True))
+    logmodel -= logsum
+    
     try:
         mini = np.min(logmodel[~np.isinf(logmodel)])
     except:
         mini = -15
     logmodel[np.isinf(logmodel)] = mini
     
-    lklh = np.sum(data * logmodel - rama)
+    lklh = np.sum(data * logmodel - fact_n_i) #+ fact_n
  
     return -lklh
     
@@ -1885,8 +1900,7 @@ def optimize(func, xdata, ydata, p0, bounds=None, diff_step=None):
     res = minimize(likelihood, p0, args=(ydata, func, xdata), 
                    method='L-BFGS-B', jac='3-point',
                    bounds=bounds_reformat,
-                   options={'gtol':1e-20, 'ftol':1e-20,
-                            'finite_diff_rel_step':diff_step})
+                   options={'finite_diff_rel_step':diff_step})
     popt = res.x
     pcov = res.hess_inv.todense()
     
