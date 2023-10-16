@@ -1104,7 +1104,7 @@ def getErrorBinomNorm(pdf, data_size, normed):
     if normed:
         pdf_err = ((pdf * (1 - pdf))/(data_size))**0.5  # binom-norm
     else:
-        pdf_err = (data_size * (pdf * (1 - pdf)))**0.5  # binom-norm
+        pdf_err = (pdf * (1 - pdf/data_size))**0.5  # binom-norm
     pdf_err[pdf_err == 0] = pdf_err[pdf_err != 0].min()
     return pdf_err
 
@@ -1861,7 +1861,6 @@ def ramanujan(n):
 
 def likelihood(params, data, func_model, *args, **kwargs):
     fact_n_i = ramanujan(data)
-    # fact_n = ramanujan(data.sum())
     x = args[0]
     
     if 'use_this_model' in kwargs.keys():
@@ -1869,13 +1868,6 @@ def likelihood(params, data, func_model, *args, **kwargs):
     else:
         model = func_model(x, *params, args[1:], normed=False)
         
-    # try:
-    #     model_size = args[1]
-    # except:
-    #     model_size = 1.
-        
-    # model = model / model_size
-
     if data.ndim == 2:
         model = model.reshape((data.shape[0], -1))
 
@@ -1893,11 +1885,36 @@ def likelihood(params, data, func_model, *args, **kwargs):
  
     return -lklh
     
-def optimize(func, xdata, ydata, p0, bounds=None, diff_step=None):
+def likelihoodChi2(params, data, func_model, *args, **kwargs):
+    """
+    Maximization of the likelihood assuming the data points follow normal distributions.
+    Hence we minimize the least squares which is a random variable following a Chi2 distribution.
+    """
+    xdata = args[0]
+    if len(args) > 1 and args[1] is not None:
+        data_err = args[1]
+    else:
+        data_err = np.ones_like(data)
+
+    if 'use_this_model' in kwargs.keys():
+        model = kwargs['use_this_model']
+    else:
+        model = func_model(xdata, *params, args[2:], normed=False)
+        model = model.reshape((data.shape[0], -1))
+        model = model / model.sum(1)[:,None] * data.sum(1)[:, None]
+        model = model.ravel()
+        
+    chi2 = np.sum((data.ravel()- model)**2 / data_err.ravel()**2)
+    chi2 = chi2 / (data.size - len(params)) # Get a reduced chi2
+    
+    return chi2
+        
+        
+def optimize(func, minimizer, xdata, ydata, p0, yerr=None, bounds=None, diff_step=None):
     if bounds is not None:
         bounds_reformat = np.array(bounds)
         bounds_reformat = bounds_reformat.T
-    res = minimize(likelihood, p0, args=(ydata, func, xdata), 
+    res = minimize(minimizer, p0, args=(ydata, func, xdata, yerr), 
                    method='L-BFGS-B', jac='3-point',
                    bounds=bounds_reformat,
                    options={'finite_diff_rel_step':diff_step})
@@ -1906,6 +1923,7 @@ def optimize(func, xdata, ydata, p0, bounds=None, diff_step=None):
     
     return popt, pcov, res
     
+
 if __name__ == '__main__':
     n = int(1e3)
     n_samp_per_loop = int(1e6)

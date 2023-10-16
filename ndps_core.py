@@ -1025,7 +1025,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
 
         null_pdf = np.array(null_pdf)
         null_pdf_err = np.array(null_pdf_err)
-
+        
         # =====================================================================
         # Cropping photometries, Iminus and Iplus
         # to the kept values of null depths
@@ -1264,10 +1264,15 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                         chi2 = 1/(null_pdf.size-popt[0].size) * np.sum(
                             (null_pdf.ravel() - out)**2/null_pdf_err.ravel()**2)
                     elif select_optimizer == 1:
-                        chi2 = gff.likelihood(popt, null_pdf, nsc_function, null_axis, n_samp_per_loop, use_this_model=out)
                         out = out.reshape((wl_scale.size, -1))
-                        # out = out / out.sum(1)[:,None] * data_null.shape[1]
                         out = out / out.sum(1)[:,None] * null_pdf.sum(1)[:, None]
+                        out = out.ravel()
+                        chi2 = gff.likelihood(popt[0], null_pdf, nsc_function, null_axis, n_samp_per_loop, use_this_model=out)
+                    elif select_optimizer == 2:
+                        out = out.reshape((wl_scale.size, -1))
+                        out = out / out.sum(1)[:,None] * null_pdf.sum(1)[:, None]
+                        out = out.ravel()
+                        chi2 = gff.likelihoodChi2(popt[0], null_pdf, nsc_function, null_axis, null_pdf_err, n_samp_per_loop, use_this_model=out)
                     term_status = None
                     print(label_optimizer, chi2)
 
@@ -1288,10 +1293,13 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                                             bounds=bounds_fit, diff_step=diffstep,
                                             x_scale=xscale)
                     elif select_optimizer == 1:
-                        popt = gff.optimize(nsc_function, null_axis, null_pdf,
+                        popt = gff.optimize(nsc_function, gff.likelihood, null_axis, null_pdf,
                                             p0=initial_guess,
                                             bounds=bounds_fit, diff_step=diffstep)
-
+                    elif select_optimizer == 2:
+                        popt = gff.optimize(nsc_function, gff.likelihoodChi2, null_axis, null_pdf,
+                                            yerr=null_pdf_err, p0=initial_guess,
+                                            bounds=bounds_fit, diff_step=diffstep)
                     # Other outpus of the **curvefit** function
                     res = popt[2]
                     # Optimal parameters found
@@ -1313,11 +1321,12 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                         chi2 = 1/(null_pdf.size-popt[0].size) *\
                             np.sum((null_pdf.ravel() - out) ** 2 /
                                    null_pdf_err.ravel()**2)
-                    elif select_optimizer == 1:
+                    elif select_optimizer == 1 or select_optimizer == 2:
                         chi2 = res.fun
                         out = out.reshape((wl_scale.size, -1))
-                        # out = out / out.sum(1)[:,None] * data_null.shape[1]
                         out = out / out.sum(1)[:,None] * null_pdf.sum(1)[:, None]
+                        out = out.ravel()
+
                     print(label_optimizer, chi2)
 
                     '''
@@ -1328,7 +1337,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                     print('******')
                     print(popt[0])
                     print(popt[1])
-                    if select_optimizer == 0:
+                    if select_optimizer == 0 or select_optimizer == 2:
                         print(uncertainties*chi2**0.5)
                     else:
                         print(uncertainties)
@@ -1819,8 +1828,12 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                                     np.sum(tmp)
                             elif select_optimizer == 1:
                                 value = gff.likelihood(parameters, null_pdf, nsc_function, null_axis, n_samp_per_loop, use_this_model=out)
+                            elif select_optimizer == 2:
+                                out = out.reshape((wl_scale.size, -1))
+                                out = out / out.sum(1)[:,None] * null_pdf.sum(1)[:, None]
+                                out = out.ravel()                                
+                                value = gff.likelihoodChi2(parameters, null_pdf, nsc_function, null_axis, n_samp_per_loop, use_this_model=out, data_err=null_pdf_err)
 
-                            print(value)
                             temp2.append([value, visi, o, s])
                         temp1.append(temp2)
                     chi2map.append(temp1)
@@ -1953,7 +1966,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                                      'null', 'sig', activate_spectral_binning,
                                      basin_hopping_count, wl_min, wl_max, valmin,
                                      valmax)
-                elif select_optimizer == 1:
+                elif select_optimizer == 1 or select_optimizer == 2:
                     gff.plot_lklh_map([chi2map[i, :, :, 0].T
                                       for i in range(chi2map.shape[0])],
                                      map_mu_opd,
