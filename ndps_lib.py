@@ -14,6 +14,10 @@ from scipy.stats import norm
 from scipy.linalg import svd
 import warnings
 from scipy.optimize import OptimizeWarning, minimize, least_squares
+import emcee
+import pickle
+import scipy.special as sp
+
 
 interpolate_kernel = cp.ElementwiseKernel(
     'float32 x_new, raw float32 xp, int32 xp_size, raw float32 yp',
@@ -1851,6 +1855,10 @@ def plot_lklh_map(lklhmap, mapx, mapy, mapz, argminz, stepx, stepy,
     plt.savefig(save_name, format='png', dpi=150)
     
 def ramanujan(n):
+    """
+    Ramanujan approximation to calculate the factorial of an integer. Work very well for any integer >= 2.
+    https://en.wikipedia.org/wiki/Stirling%27s_approximation
+    """
     stirling = n * np.log(n) - n
     rama = stirling + 1/6 * np.log(8*n**3 + 4*n**2 + n + 1/30) + np.log(np.pi)/2
     try:
@@ -1860,13 +1868,42 @@ def ramanujan(n):
     return rama
 
 def likelihood(params, data, func_model, *args, **kwargs):
+    """
+    Likelihood of a dataset following multinomial distribution (e.g. number of occurences in the bins of a histogram)
+
+    Parameters
+    ----------
+    params : array
+        parameters to fit.
+    data : array
+        data to fit.
+    func_model : function
+        Model of the data.
+    *args : function arguments
+        extra-arguments to pass to this function and ``func_model''. The first argument must be values of the x-axis of the dataset.
+    **kwargs : keywords arguments
+        Keywords accepted: 
+            - ``verbose'': boolean to set to ``'False'' to deactivate the ``print'' in the ``func_model''.
+            - ``use_this_model'' (array) : uses the values from a model generated out of this function instead of calling ``func_model''.
+
+    Returns
+    -------
+    float
+        negative log of the likelihood. The negative is picked for minimize algorithm to work.
+
+    """
     fact_n_i = ramanujan(data)
     x = args[0]
+    
+    if 'verbose' in kwargs.keys():
+        verbose = kwargs['verbose']
+    else:
+        verbose = True
     
     if 'use_this_model' in kwargs.keys():
         model = kwargs['use_this_model']
     else:
-        model = func_model(x, *params, args[1:], normed=False)
+        model = func_model(x, *params, args[1:], normed=False, verbose=verbose)
         
     if data.ndim == 2:
         model = model.reshape((data.shape[0], -1))
@@ -1895,11 +1932,16 @@ def likelihoodChi2(params, data, func_model, *args, **kwargs):
         data_err = args[1]
     else:
         data_err = np.ones_like(data)
+        
+    if 'verbose' in kwargs.keys():
+        verbose = kwargs['verbose']
+    else:
+        verbose = True
 
     if 'use_this_model' in kwargs.keys():
         model = kwargs['use_this_model']
     else:
-        model = func_model(xdata, *params, args[2:], normed=False)
+        model = func_model(xdata, *params, args[2:], normed=False, verbose=verbose)
         model = model.reshape((data.shape[0], -1))
         model = model / model.sum(1)[:,None] * data.sum(1)[:, None]
         model = model.ravel()
@@ -1911,6 +1953,38 @@ def likelihoodChi2(params, data, func_model, *args, **kwargs):
         
         
 def optimize(func, minimizer, xdata, ydata, p0, yerr=None, bounds=None, diff_step=None):
+    """
+    Wrapper using the ``scipy.optimize.minimize'' with the L-BFGS-B algorithm.
+
+    Parameters
+    ----------
+    func : function
+        model of the instrument.
+    minimizer : function
+        cost function.
+    xdata : array-like
+        abscissa of the data to fit.
+    ydata : array-like
+        Dataset to fit (could be a histogram).
+    p0 : array-like
+        Initial guess on the parameters to fit.
+    yerr : array-like, optional
+        uncertainties on the data. The default is None.
+    bounds : array-like, optional
+        Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),...). The default is None.
+    diff_step : array of the same size as ``p0'', optional
+        differential step used by the minimize algorithm to explore the parameter space. The default is None.
+
+    Returns
+    -------
+    popt : array
+        Best fitted values.
+    pcov : 2D-array
+        Covariance matrix.
+    res : dic
+        Complete return of the ``scipy.optimize.minimize'' function.
+
+    """
     if bounds is not None:
         bounds_reformat = np.array(bounds)
         bounds_reformat = bounds_reformat.T
@@ -1923,6 +1997,288 @@ def optimize(func, minimizer, xdata, ydata, p0, yerr=None, bounds=None, diff_ste
     
     return popt, pcov, res
     
+def log_prior(params, bounds):
+    """
+    Uniform prior on a set of parameters to fit
+
+    Parameters
+    ----------
+    params : array of size (N,)
+        Parameters to fit.
+    bounds : array-like
+        Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),...).
+
+    Returns
+    -------
+    float
+        value of the prior.
+
+    """
+    return_log = 0
+    for k in range(len(params)):
+        if bounds[k][0] <= params[k] <= bounds[k][1]:
+            return_log += 1
+    if return_log == len(params):
+        return 0.0
+    else:
+        return -np.inf
+
+
+def log_posterior(params, bounds, histo_data, bins, lklh_func, func_model, func_kwargs, **kwargs):
+    """
+    Log posterior to maximize to find the best parameters.
+
+    Parameters
+    ----------
+    params : array-like
+        Parameters to fit.
+    bounds : array-like
+        Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),...).
+    histo_data : array of size (N,) or (nb wl, N)
+        histogram to fit.
+    bins : array-like of size (N+1,) or (nb wl, N+1)
+        bins of the histogram.
+    lklh_func : function
+        likelihood function to maximize. Only two exist so far: for a multinomial distribution and a Chi2 distribution. Both are implemented to be minimized. When used in ``log_posterior'', necessary is done to maximize the likelihood.
+    func_model : function
+        Model of the instrument + atmosphere delivering the null depth.
+    func_kwargs : dictionnary
+        dictionnary to pass extra-arguments to ``func_model'' for its proper execution when called by a fitting algorithm.
+    **kwargs : keywords
+        accepted kewword is ``'data_err'' when ``log_posterior'' is called to maximize a Chi2 likelihood. This keyword must also be in ``func_kwargs''.
+
+    Returns
+    -------
+    log_posterior : float
+        value of the posterior
+
+    """
+    log_pr = log_prior(params, bounds)
+    if 'data_err' in kwargs.keys():
+        data_err = kwargs['data_err']
+    else:
+        data_err = None
+    log_lklh = lklh_func(params, histo_data, func_model, bins, data_err, **func_kwargs)
+    log_posterior = log_pr - log_lklh
+    return log_posterior
+
+def use_mcmc(lklh_func, lklh_args, init_pos, mcmc_args, lklh_kwargs, func_kwargs):
+    """
+    Wrapper to perform a MCMC with emcee library. This MCMC looks for the **maximum** of a posterior while the likelihood functions are coded to be **minimized**.
+    This subtlety is handled in the code.
+
+    Parameters
+    ----------
+    lklh_func : function
+        likelihood function to calculate the posterior.
+    lklh_args : tuple-like
+        tuple of arguments to feed into the likelihood function.
+    init_pos : array of shape (nb wlakers, nb params)
+        Initial position of the walkers.
+    mcmc_args : tuple-like
+        tuple of arguments to pass to the MCMC algorithm containing in that order: nb of walkers (integer), nb of steps (integer), progress bar (bool).
+    lklh_kwargs : dic
+        keywords arguments of the likelihood function to pass.
+    func_kwargs : dic
+        keywords arguments of the model used in the likelihood function.
+
+    Returns
+    -------
+    samples : nd-array
+        samples of the MCMC.
+    flat_samples : 2d-array of shape (nb_steps- burnin, nb parameters)
+        flattened chains with discarded burn-in steps (default is nb of steps // 10).
+
+    """
+    bounds, histdata, histdatabins, func_model = lklh_args
+    nwalkers, nstep, progress_bar = mcmc_args
+    ndim = init_pos.size
+    norm_init_pos = init_pos.copy()
+    pos = norm_init_pos + 1e-7 * np.random.randn(nwalkers, init_pos.size)
+    
+    sampler = emcee.EnsembleSampler(
+        nwalkers, ndim, log_posterior, args=(bounds, histdata, histdatabins, lklh_func, func_model, func_kwargs),
+        kwargs=lklh_kwargs
+    )
+    sampler.run_mcmc(pos, nstep, progress=progress_bar)
+    samples = sampler.get_chain()
+    flat_samples = sampler.get_chain(discard=min(nstep//10, 600), flat=True)
+    return samples, flat_samples
+
+class Target(object):
+    def __init__(self, data_list):
+        self.all_baselines = {'null1': 5.55, 'null2': 6.45,
+                              'null3': 4.65, 'null4': 2.15, 'null5': 3.2, 'null6': 5.68}
+        self.dic_null = self.loadData(data_list)
+        self.null = []
+        self.null_err = []
+        self.null_err_measured = []
+        self.baselines = []
+
+    def loadData(self, data_list):
+        data = {'null1': [], 'null2': [], 'null3': [],
+                'null4': [], 'null5': [], 'null6': []}
+        for f in data_list:
+            with open(f, 'rb') as fichier:
+                mon_depickler = pickle.Unpickler(fichier)
+                content = mon_depickler.load()
+                for key in content.keys():
+                    data[key].append(content[key][0][0] +
+                                     content[key][2]+list(content[key][1][0]))
+
+        for key in ['null%s' % (i+1) for i in range(6)]:
+            if len(data[key]) > 0:
+                data[key] = np.array(data[key])
+            else:
+                del data[key]
+        return data
+
+    def flagData(self, dic_flag):
+        for key in self.dic_null.keys():
+            self.dic_null[key] = self.dic_null[key][dic_flag[key]]
+
+    def createNullArray(self, use_chi2=True):
+        # From shortest to longest baselines: N4, N5, N3, N1, N6, N2
+        all_baselines = self.all_baselines
+        baselines = []
+        null, null_err = [], []
+        null_measured, null_err_measured = [], []
+        mu_measured, mu_err_measured = [], []
+        mu, mu_err = [], []
+        sig_measured, sig_err_measured = [], []
+        sig, sig_err = [], []
+        chi2min_idx = []
+        dic = self.dic_null
+        for key in dic:
+            sz = np.size(dic[key][:, 0])
+            # / sz**0.5 * stats.t.interval(0.68, sz-1)[1]
+            std = np.std(dic[key][:, 0])
+            avg = np.mean(dic[key][:, 0])
+            null.append(avg)
+            null_err.append(std)
+            baselines.append(all_baselines[key])
+            mu.append(np.mean(dic[key][:, 1]))
+            mu_err.append(np.std(dic[key][:, 1]))
+            sig.append(np.mean(dic[key][:, 2]))
+            sig_err.append(np.std(dic[key][:, 2]))
+            try:
+                argmin = np.argmin(dic[key][:, 3])
+                chi2 = dic[key][argmin, 3]
+                null_measured.append(dic[key][argmin, 0])
+                mu_measured.append(dic[key][argmin, 1])
+                sig_measured.append(dic[key][argmin, 2])
+                if use_chi2:
+                    null_err_measured.append(dic[key][argmin, 4] * chi2**0.5)
+                    mu_err_measured.append(dic[key][argmin, 5] * chi2**0.5)
+                    sig_err_measured.append(dic[key][argmin, 6] * chi2**0.5)
+                else:
+                    null_err_measured.append(dic[key][argmin, 4])
+                    mu_err_measured.append(dic[key][argmin, 5])
+                    sig_err_measured.append(dic[key][argmin, 6])
+            except ValueError:
+                argmin = 0
+                null_measured.append(0)
+                null_err_measured.append(0)
+            chi2min_idx.append(argmin)
+
+        null = np.array(null)
+        null_err = np.array(null_err)
+        null_measured = np.array(null_measured)
+        null_err_measured = np.array(null_err_measured)
+        baselines = np.array(baselines)
+        chi2min_idx = np.array(chi2min_idx)
+        mu_measured, mu_err_measured = np.array( mu_measured), np.array(mu_err_measured)
+        sig_measured, sig_err_measured = np.array(sig_measured), np.array(sig_err_measured)
+        mu, mu_err = np.array(mu), np.array(mu_err)
+        sig, sig_err = np.array(sig), np.array(sig_err)
+        self.chi2min_idx = chi2min_idx[np.argsort(baselines)]
+        self.null = null[np.argsort(baselines)]
+        self.null_err = null_err[np.argsort(baselines)]
+        self.null_measured = null_measured[np.argsort(baselines)]
+        self.null_err_measured = null_err_measured[np.argsort(baselines)]
+        self.baselines = baselines[np.argsort(baselines)]
+        self.mask = mask = np.isnan(self.null)
+        self.mu_measured = mu_measured
+        self.mu_err_measured = mu_err_measured
+        self.sig_measured = sig_measured
+        self.sig_err_measured = sig_err_measured
+        self.mu, self.mu_err = mu, mu_err
+        self.sig, self.sig_err = sig, sig_err
+        if np.any(self.mask):
+            self.null = self.null[~mask]
+            self.null_err = self.null_err[~mask]
+            self.null_measured = self.null_measured[~mask]
+            self.null_err_measured = self.null_err_measured[~mask]
+            self.baselines = self.baselines[~mask]
+            self.chi2min_idx = self.chi2min_idx[~mask]
+            self.mu_measured = self.mu_measured[~mask]
+            self.mu_err_measured = self.mu_err_measured[~mask]
+            self.sig_measured = self.sig_measured[~mask]
+            self.sig_err_measured = self.sig_err_measured[~mask]
+            self.mu = self.mu[~mask]
+            self.mu_err = self.mu_err[~mask]
+            self.sig = self.sig[~mask]
+            self.sig_err = self.sig_err[~mask]
+
+        return self.null, self.null_err, self.null_measured, self.null_err_measured, self.baselines, self.chi2min_idx,\
+            self.mu, self.mu_err, self.sig, self.sig_err, self.mu_measured, self.mu_err_measured, self.sig_measured, self.sig_err_measured
+
+
+class Calibration(Target):
+    def __init__(self, data_list, diam, diam_err):
+        self.nullth = []
+        self.nullth_err = []
+        self.calib = []  # Calibration of cal data with expected
+        self.calib_err = []
+        self.diam = diam
+        self.diam_err = diam_err
+        Target.__init__(self, data_list)
+
+    def analyticalNull(self, base, angle, wl):
+        '''
+        angle in mas
+        base in meter
+        lamb in µm
+        '''
+        # lamb = 1.55
+        angle = angle * np.pi / 180. * 0.001 / 3600.
+        arg = np.pi * angle * base / (wl*1.E-6)
+
+        v = abs(2 * sp.jv(1, arg) / arg)
+        return (1-v)/(1+v)
+
+    def getExpectedNull(self, wl):
+        used_bl = np.array([])
+        self.nullth = np.array([])
+        self.nullth_err = np.array([])
+        for key in self.dic_null.keys():
+            bl = self.all_baselines[key]
+            self.nullth = np.append(
+                self.nullth, self.analyticalNull(bl, self.diam, wl))
+            rv_diam = np.random.normal(self.diam, self.diam_err, 1000)
+            rv_nullth = self.analyticalNull(bl, rv_diam, wl)
+            self.nullth_err = np.append(self.nullth_err, np.std(rv_nullth))
+            used_bl = np.append(used_bl, bl)
+
+        self.nullth = self.nullth[np.argsort(used_bl)]
+        self.nullth_err = self.nullth_err[np.argsort(used_bl)]
+
+    def getInstruNull(self):
+        self.instru_null = self.null - self.nullth
+        self.instru_null_err = (self.null_err**2 + self.nullth_err**2)**0.5
+
+
+class Sci(Target):
+    def __init__(self, data_list):
+        self.null_calibrated = []
+        self.null_calibrated_err = []
+        Target.__init__(self, data_list)
+
+    def calibrateNull(self, instru_null, instru_null_err):
+        self.null_calibrated = self.null - instru_null[~self.mask]
+        self.null_calibrated_err = (
+            self.null_err**2 + instru_null_err[~self.mask]**2)**0.5
+
 
 if __name__ == '__main__':
     n = int(1e3)
@@ -1981,3 +2337,4 @@ if __name__ == '__main__':
     # plt.plot(histo1[1][:-1], histo1[0])
     # plt.plot(histo2[1][:-1], histo2[0])
     # plt.grid()
+    

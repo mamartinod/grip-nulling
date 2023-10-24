@@ -38,7 +38,7 @@ activate_use_photometry = False
 activate_remove_dark = False
 activate_draw_model = True
 activate_lbti_mode = False
-activate_rvu = True
+activate_rvu = False
 # Use the measured zeta coeff. If False, value are set to 0.5
 activate_zeta = True
 # Do not do fit
@@ -61,12 +61,20 @@ nb_frames_sorting_binning = 100
 nb_frames_binning_photometry = -1
 # Choice of optimizer
 select_optimizer = 0 # 0 = Chi2, 1 = lklh
-
+# Series of results
+results_series = (1000, 1010)
+results_names = '1525-1575_AlfBoo'
+# mcmc args
+activate_mcmc = True
+nwalkers = 6
+nstep = 2000
+progress_bar = True
+mcmc_args = (nwalkers, nstep, progress_bar)
 # Which data files to load
 # supercount = 1
 # z = supercount * 100
 # for k in range(z, z+1):
-for supercount in range(2, 3):
+for supercount in range(14, 15):
     plt.close('all')
     z = supercount * 100
     k = z
@@ -76,7 +84,7 @@ for supercount in range(2, 3):
     # lower and upper bound of the iteration loop for basin hopping method
     basin_hopping_nloop = (10*k, 10*k+10)
     # Baselines to process
-    which_nulls = ['null6']
+    which_nulls = ['null5', 'null6']
     
     # Lower bound of the bandwidth to process
     wl_min = 1525
@@ -90,7 +98,7 @@ for supercount in range(2, 3):
                  activate_spectral_binning, activate_time_binning_photometry,
                  activate_use_antinull, activate_use_photometry,
                  activate_zeta, activate_remove_dark, activate_draw_model, activate_lbti_mode,
-                 select_optimizer, activate_rvu)
+                 select_optimizer, activate_rvu, activate_mcmc)
     
     maps_sz = (map_na_sz, map_mu_sz, map_sig_sz)
     
@@ -101,6 +109,8 @@ for supercount in range(2, 3):
     
     wl_minmax = (wl_min, wl_max)
     
+    resuts_rsc = (results_series, results_names, mcmc_args)
+    
     
     out = run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
-                  wl_minmax, supercount)
+                  wl_minmax, supercount, resuts_rsc)

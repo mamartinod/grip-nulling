@@ -64,8 +64,8 @@ def prepareConfig(supercount):
     root = "C:/Users/marc-antoine/glint/"
     # root = "/mnt/96980F95980F72D3/"
     file_path = root+'GLINTprocessed/'+datafolder
-    save_path = file_path+'chi2/'
-    data_list = [file_path+f for f in os.listdir(file_path) if '.hdf5' in f and 'n1n4' in f]
+    save_path = file_path+'lstsqrs/'
+    # data_list = [file_path+f for f in os.listdir(file_path) if '.hdf5' in f and 'n1n4' in f]
     data_list = [file_path+f for f in os.listdir(file_path) if '.hdf5' in f and 'n5n6' in f]
     dark_list = [root+'GLINTprocessed/'+darkfolder+f for f in os.listdir(root+'GLINTprocessed/'+darkfolder) if '.hdf5' in f and 'dark1' in f]
     calib_params_path = file_path#root+'GLINTprocessed/calibration_params/'

@@ -10,3 +10,13 @@ nsc_lib (copy 1).py
 run_nsc (copy 1).py
 
 Simon_NSC (copy 1).ipynb
+
+ndps_config (copy 1).py
+
+ndps_core (copy 1).py
+
+ndps_lib (copy 1).py
+
+run_ndps (copy 1).py
+
+.spyproject/config/

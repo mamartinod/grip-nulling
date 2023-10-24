@@ -132,6 +132,7 @@ import pickle
 from datetime import datetime
 from ndps_config import prepareConfig
 from cupyx.scipy.special import ndtr
+import corner
 
 plt.ioff()
 
@@ -244,9 +245,16 @@ def nsc_function(bins0, na, mu_opd, sig_opd, *args, **kwargs):
         normed = True
 
 
-    count += 1
-    text_intput = (int(count), na, mu_opd, sig_opd, *args)
-    print(text_intput)
+    try:    
+        count += 1
+    except NameError:
+        count = 0
+    
+    if 'verbose' in kwargs.keys() and kwargs['verbose'] == False:
+        pass
+    else:
+        text_intput = (int(count), na, mu_opd, sig_opd, *args)
+        print(text_intput)
 
     # Axes: spectral channel, number of bins
     accum = cp.zeros((bins0.shape[0], bins0.shape[1]-1), dtype=cp.float32)
@@ -515,7 +523,7 @@ class Logger(object):
 
 
 def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
-            wl_minmax, supercount):
+            wl_minmax, supercount, resuts_rsc):
     """Run the NSC script to fit the self-calibrated null depth.
 
     :param activates: pack all the booleans to tune the script
@@ -589,7 +597,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
         activate_spectral_binning, activate_time_binning_photometry,\
         activate_use_antinull, activate_use_photometry,\
         activate_zeta, activate_remove_dark, activate_draw_model, activate_lbti_mode,\
-        select_optimizer, activate_rvu = activates
+        select_optimizer, activate_rvu, activate_mcmc = activates
 
     map_na_sz, map_mu_sz, map_sig_sz = maps_sz
     global_binning, n_samp_total, n_samp_per_loop, nb_frames_sorting_binning,\
@@ -642,7 +650,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
     sig_opd0 = config['sig_opd0']
     na0 = config['na0']  # initial guess of astro null for the 6 baselines
 
-    ''' Import real data '''
+    """ Import real data """
     datafolder = config['datafolder']
     darkfolder = config['darkfolder']
     datafolder = datafolder
@@ -664,9 +672,9 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-    '''
+    """
     Some constants/useless variables kept for retrocompatibility
-    '''
+    """
     dphase_bias = 0.  # constant value for corrective phase term
     phase_bias = 0.  # Phase of the fringes
 
@@ -686,7 +694,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
             basin_hopping_nloop[0], basin_hopping_nloop[0]+1)
 
     # Specific settings for non-fitting
-    if skip_fit:
+    if skip_fit or activate_mcmc:
         basin_hopping_nloop = (
             basin_hopping_nloop[0], basin_hopping_nloop[0]+1)
 
@@ -720,6 +728,8 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
             msg = 'NSC'
         elif chi2_map_switch and not activate_preview_only:
             msg = label_optimizer+'map scanning'
+        elif activate_mcmc:
+            msg = 'MCMC'
         else:
             msg = 'Unknown'
         
@@ -1131,14 +1141,14 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
         bounds_sig = bounds_sig0[idx_null]
         bounds_na = bounds_na0[idx_null]
         # Compile them into a readable tuple called by the TRF algorithm
-        bounds_fit = ([bounds_na[0], bounds_mu[0], bounds_sig[0]],
-                      [bounds_na[1], bounds_mu[1], bounds_sig[1]])
+        bounds_fit = np.array(([bounds_na[0], bounds_mu[0], bounds_sig[0]],
+                      [bounds_na[1], bounds_mu[1], bounds_sig[1]]))
         if not activate_use_antinull and not activate_lbti_mode:
             number_of_Ir = 1  # wl_scale0.size
-            bounds_fit = ([bounds_na[0], bounds_mu[0], bounds_sig[0]] +
+            bounds_fit = np.array(([bounds_na[0], bounds_mu[0], bounds_sig[0]] +
                           [0] * number_of_Ir+[1e-6]*number_of_Ir,
                           [bounds_na[1], bounds_mu[1], bounds_sig[1]] +
-                          [10] * number_of_Ir+[10]*number_of_Ir)
+                          [10] * number_of_Ir+[10]*number_of_Ir))
             diffstep = diffstep + [0.1]*number_of_Ir+[0.1]*number_of_Ir
             xscale = np.append(xscale, [[1]*number_of_Ir, [1]*number_of_Ir])
 
@@ -1185,7 +1195,8 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
             print('-------------')
             print(basin_hopping_count)
             print('-------------')
-            print('Fitting '+key)
+            print('Execution mode: ' + msg)
+            print('Baseline '+key)
             print('%s-%02d-%02d %02dh%02d' % (datetime.now().year,
                                               datetime.now().month,
                                               datetime.now().day,
@@ -1219,6 +1230,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
             print('Type of optimizer', select_optimizer)
             print('Normed PDF', normed)
             print('activate_rvu', activate_rvu)
+            print('activate_mcmc', activate_mcmc)
             print('')
 
             '''
@@ -1237,7 +1249,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
             '''
             Model fitting
             '''
-            if not chi2_map_switch:
+            if not chi2_map_switch and not activate_mcmc:
                 guess_na = na
                 initial_guess = [guess_na, mu_opd, sig_opd]
                 if not activate_use_antinull and not activate_lbti_mode:
@@ -1799,7 +1811,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                 #     if activate_spectral_binning:
                 #         string = string + '_sb'
                 #     plt.savefig(save_path+string+'.png', dpi=150)
-            else:
+            elif chi2_map_switch:
                 ''' Map the parameters space '''
                 print('Mapping parameters space')
                 count = 0
@@ -1986,17 +1998,64 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                                      activate_spectral_binning,
                                      basin_hopping_count, wl_min, wl_max, valmin,
                                      valmax)
-    
-                    gff.plot_lklh_map([chi2map[:, i, :, 0]
-                                      for i in range(chi2map.shape[1])],
-                                     map_sig_opd,
-                                     map_na, map_mu_opd, argmin[1], step_sig,
-                                     step_na,
-                                     'sig opd', 'null depth', 'mu', key, save_path,
-                                     'null', 'sig', activate_spectral_binning,
-                                     basin_hopping_count, wl_min, wl_max, valmin,
-                                     valmax)                    
+            else:
+                """
+                Do MCMC here
+                """
+                path = save_path
+                series = resuts_rsc[0]
+                name = resuts_rsc[1] # 1525-1575_AlfBoo
+                results_files = [path+key+'_%03d_'%(count)+name+'_pdf.pkl' for count in range(series[0], series[1])]
+                
+                alfboo_dispersed = gff.Sci(results_files)
+                dic_flag = {bl: np.ones(
+                    alfboo_dispersed.dic_null[bl].shape[0], dtype=bool) for bl in alfboo_dispersed.dic_null.keys()}
+                alfboo_dispersed.flagData(dic_flag)
+                alfboo_dispersed.createNullArray(use_chi2=False)                 
+                y = alfboo_dispersed.null_measured
+                ymu = alfboo_dispersed.mu_measured
+                ysig = alfboo_dispersed.sig_measured
+                init_pos = np.array([y, ymu, ysig])
+                init_pos = np.squeeze(init_pos)
+                bounds_fit_reshaped = np.array(bounds_fit).T
+                lklh_args = [bounds_fit_reshaped, null_pdf, null_axis, nsc_function]
+                if select_optimizer == 1:
+                    lklh_func = gff.likelihood
+                    lklh_kwargs = None
+                elif select_optimizer == 2 or select_optimizer == 0:
+                    lklh_func = gff.likelihoodChi2
+                    lklh_kwargs = {'data_err': null_pdf_err}
+                
+                func_kwargs = {'normed': normed, 'verbose': False}
+                mcmc_args = resuts_rsc[2]
+                print('MCMC: Number of walkers:', mcmc_args[0])
+                print('MCMC: Number of steps:', mcmc_args[1])
+                
+                samples, flat_samples = gff.use_mcmc(lklh_func, lklh_args, init_pos, mcmc_args, lklh_kwargs, func_kwargs)
+                ndim = init_pos.size
 
+                np.savez(save_path + key+'_'+str(basin_hopping_count)+'_mcmc_results_'+name, samples=samples, uncertainties=flat_samples.std(0), values=init_pos)
+                print('Data savec in: '+save_path+key+'_'+str(basin_hopping_count)+'_mcmc_results_'+name+'.npz')
+                print('MCMC uncertainties: ', flat_samples.std(0))
+                
+                fig, axes = plt.subplots(ndim, figsize=(10, 7), sharex=True)
+                labels = ["na", "mu", "sig"]
+                for i in range(ndim):
+                    ax = axes[i]
+                    ax.plot(samples[:, :, i], "k", alpha=0.3)
+                    ax.set_xlim(0, len(samples))
+                    ax.set_ylabel(labels[i])
+                    ax.yaxis.set_label_coords(-0.1, 0.5)
+                
+                axes[-1].set_xlabel("step number")
+                fig.tight_layout()
+                fig.savefig(save_path +key+'_'+str(basin_hopping_count)+'_mcmc_'+name+'.png', format='png', dpi=150)
+                
+                fig = corner.corner(
+                    flat_samples, labels=['na', 'mu', 'sigma'], truths=init_pos
+                )
+                fig.savefig(save_path + key+'_'+str(basin_hopping_count)+'_mcmc_corner_plot_'+name+'.png', format='png', dpi=150)
+                
             if not chi2_map_switch:
                 sys.stdout.close()
 
@@ -2006,7 +2065,7 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
                              n_samp_per_loop]}
             wl_scale = wl_scale_saved
 
-            if not skip_fit and not chi2_map_switch:
+            if not skip_fit and not chi2_map_switch and not activate_mcmc:
                 '''
                 Save the optimal parameters, inputs, fit information of all
                 basin hop in one run.
@@ -2037,6 +2096,8 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
     elif chi2_map_switch:
         return chi2map, map_mu_opd, map_na, map_sig_opd, argmin, data_null,\
             null_axis, null_pdf
+    elif activate_mcmc:
+        return samples, flat_samples.std(0)
     else:
         return popt[0], uncertainties, chi2, data_null, null_axis, null_pdf,\
             (Iminus, Iplus), data, dark
