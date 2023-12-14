@@ -821,8 +821,8 @@ def run_ndps(activates, skip_fit, chi2_map_switch, maps_sz, nbs, which_nulls,
             dark_Iminus = dark['Iminus']
             dark_Iplus = dark['Iplus']
             
-        std_dark_Iminus = np.std(dark_Iminus)
-        dark_Iminus -= np.mean(dark_Iminus, 1, keepdims=True)
+        # std_dark_Iminus = np.std(dark_Iminus)
+        # dark_Iminus -= np.mean(dark_Iminus, 1, keepdims=True)
             
         dark_Iminus_axis, dark_Iminus_cdf = gff.get_dark_cdf(
             dark_Iminus, wl_scale0)

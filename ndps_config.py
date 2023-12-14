@@ -61,8 +61,8 @@ def prepareConfig(supercount):
     datafolder = 'data202006/AlfBoo/'
     darkfolder = 'data202006/AlfBoo/'
     # root = "//morgana.physics.usyd.edu.au/Morgana2/snert/"
-    root = "C:/Users/marc-antoine/glint/"
-    # root = "/mnt/96980F95980F72D3/"
+    # root = "C:/Users/marc-antoine/glint/"
+    root = "/mnt/96980F95980F72D3/"
     file_path = root+'GLINTprocessed/'+datafolder
     save_path = file_path+'lstsqrs/'
     # data_list = [file_path+f for f in os.listdir(file_path) if '.hdf5' in f and 'n1n4' in f]
