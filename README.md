@@ -6,7 +6,25 @@ Over the year, several nulling self-calibration pipelines have been written. Wit
 2. to improve the versatility and performance of the pipeline by adding dispersed modes and better ways to compute the error bars (e.g., MCMC);
 3. to make this software open-source so that it can serve the whole community and serve as a basis for future developments.
 
-# Acknowledgements
-NDPS is a development carried out in the context of the [SCIFY project](http://denis-defrere.com/scify.php). SCIFY has received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program (grant agreement No 8660).
+# Documentation
+Find the documentation [here](https://mamartinod.github.io/grip/).
 
-The documentation of the software package is funded by the European Union's Horizon 2020 research and innovation program under grant agreement No. 101004719
+# Installation
+## Dependencies
+- numpy >= 1.26.2
+- scipy >= 1.11.4
+- matplotlib >= 3.6.3
+- h5py >= 3.8.0
+- emcee >= 3.1.4
+- cupy >= 11.5.0 (optional and not downloaded during the installation)
+
+## How-to
+1. Clone or download the repo.
+2. Open the folder then a terminal
+3. Use the command ``pip install .`` or ``conda install .``.
+4. Visit the documentation and its tutorial to discover more about the library.
+
+# Acknowledgements
+GRIP is a development carried out in the context of the [SCIFY project](http://denis-defrere.com/scify.php). SCIFY has received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program (grant agreement No 8660).
+
+The documentation of the software package is funded by the European Union's Horizon 2020 research and innovation program under grant agreement No. 101004719.
