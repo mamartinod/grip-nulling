@@ -26,14 +26,18 @@ It can work on GPU thanks to the cupy library but it does not handle Jax yet.
 
 Dependencies
 ------------
-- numpy
-- scipy
-- matplotlib
-- h5py
-- emcee
-- itertools
-- timeit
-- cupy
+- numpy >= 1.26.2
+- scipy >= 1.11.4
+- matplotlib >= 3.6.3
+- h5py >= 3.8.0
+- emcee >= 3.1.4
+- cupy >= 11.5.0 (optional and not downloaded during the installation)
+
+Installation
+------------
+1. Clone or download the repo.
+2. Open the folder then a terminal
+3. Use the command ``pip install .`` or ``conda install .``.
 
 Tutorials
 ---------
