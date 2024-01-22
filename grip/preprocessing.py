@@ -12,14 +12,20 @@ import matplotlib.pyplot as plt
 # Yield successive n-sized
 # chunks from l.
 def divide_chunks(l, n):
-    """Yield successive n-sized chunks from l.
+    """
+    Yield successive n-sized chunks from l.
 
-    :param l: Size of the list to chunk.
-    :type l: int
-    :param n: Size of a chunk of the list.
-    :type n: int
-    :return: Generator of the chunks.
-    :rtype: Yields
+    Parameters
+    ----------
+    l : int
+        Size of the list to chunk.
+    n : int
+        Size of a chunk of the list.
+
+    Yields
+    ------
+    yield
+        Generator of the chunks.
 
     """
     # looping till length l
@@ -28,19 +34,27 @@ def divide_chunks(l, n):
 
 
 def binning(arr, binning, axis=0, avg=False):
-    """Bin elements together
+    """
+    Bin elements together.
 
-    :param arr: Array containing data to bin
-    :type arr: nd-array
-    :param binning: Number of frames to bin
-    :type binning: int
-    :param axis: axis along which the frames are binned, defaults to 0
-    :type axis: int, optional
-    :param avg: if ``True``, the method returns the average of the
-            binned frame. Otherwise, return its sum., defaults to False.
-    :type avg: bool, optional
-    :return: binned datacube, index of the kept frames.
-    :rtype: 2-tuple
+    Parameters
+    ----------
+    arr : nd-array
+        Array containing data to bin.
+    binning : int
+        Number of frames to bin.
+    axis : int, optional
+        Axis along which the frames are binned. The default is 0.
+    avg : bool, optional
+        if ``True``, the method returns the average of the\
+                binned frame. Otherwise, return its sum. The default is False.
+
+    Returns
+    -------
+    arr : nd-array
+        Binned array.
+    cropped_idx : array
+        Index of the kept frames.
 
     """
     if binning is None or binning > arr.shape[axis] or binning < 0:
@@ -67,7 +81,8 @@ def binning(arr, binning, axis=0, avg=False):
 
 def sortFrames(dic_data, nb_frames_to_bin, quantile, factor_minus, factor_plus,
                which_null, starname, plot=False, save_path=''):
-    """Perform sigmal-clipping to remove frames non-normally distributed\
+    """
+    Perform sigmal-clipping to remove frames non-normally distributed\
         phase fluctuations.
 
     Sigma-clipping to filter the frames which phase is not Gaussian
@@ -85,36 +100,41 @@ def sortFrames(dic_data, nb_frames_to_bin, quantile, factor_minus, factor_plus,
     In the second step, frames for which both fluxes are kept are saved,
     the others are discarded.
 
-    :param dic_data: Contains the extracted data from files by the function ``load_data``.
-    :type dic_data: dict
-    :param nb_frames_to_bin: Number of frames to bin before applying the filter.
-        It is used to increase the SNR and exhibit the phase noise over
-        the detector noise.
-    :type nb_frames_to_bin: int
-    :param quantile: Dirst quantile taken to determine the `base` threshold.
-    :type quantile: loat between 0 and 1
-    :param factor_minus: Factor applied to the std of the null flux to\
-        determine the second threshold.
-    :type factor_minus: float
-    :param factor_plus: Factor applied to the std of the antinull flux
-        to determine the second threshold.
-    :type factor_plus: float
-    :param which_null: Indicates on which baseline the filter is applied.
-    :type which_null: string
-    :param starname: Name of the star
-    :type starname: string
-    :param plot: If ``True``, it displays the time serie of the binned frames,
-        the thresholds and highlights the filtered frames.
-        The default is False., defaults to False
-    :type plot: bool, optional
-    :param save_path: Path where the plots is saved in png format (dpi = 150),
-        defaults to ''
-    :type save_path: str, optional
-    :return new_dic: New dictionary with only the saved data points.
-    :rtype: dict
-    :return idx_good_frames: ndex of the kept frames in the input dictionary.
-    :rtype: array
+    Parameters
+    ----------
+    dic_data : dict
+        Contains the extracted data from files by the function ``load_data``.
+    nb_frames_to_bin : int
+        Number of frames to bin before applying the filter.\
+            It is used to increase the SNR and exhibit the phase noise over\
+            the detector noise.
+    quantile : float between 0 and 1
+        First quantile taken to determine the `base` threshold.
+    factor_minus : float
+        Factor applied to the std of the null flux to\
+            determine the second threshold.
+    factor_plus : float
+        Factor applied to the std of the antinull flux\
+            to determine the second threshold.
+    which_null : string
+        Indicates on which baseline the filter is applied.
+    starname : string
+        Name of the star.
+    plot : bool, optional
+        If ``True``, it displays the time serie of the binned frames,\
+            the thresholds and highlights the filtered frames.\
+            The default is False. The default is False.
+    save_path : string, optional
+        Path where the plots is saved in png format (dpi = 150). The default is ''.
 
+    Returns
+    -------
+    new_dic : dict
+       New dictionary with only the saved data points.
+    idx_good_frames : array
+        Index of the kept frames in the input dictionary.
+    intensities: 2-tuple
+        Arrays of fluxes in null and anti-null outputs.
     """
     nb_frames_total = dic_data['Iminus'].shape[1]
     Iminus = dic_data['Iminus'].mean(axis=0)
@@ -171,4 +191,5 @@ def sortFrames(dic_data, nb_frames_to_bin, quantile, factor_minus, factor_plus,
             '_frame_selection_monitor_%s_%s' % (factor_minus, factor_plus)
         plt.savefig(save_path+string+'.png', dpi=150)
 
-    return new_dic, idx_good_frames, (Iminus, Iplus)
+    intensities = (Iminus, Iplus)
+    return new_dic, idx_good_frames, intensities

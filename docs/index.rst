@@ -14,13 +14,13 @@ with the nulling self-calibration method (NSC).
 These tools can work with data coming from any nuller nuller.
 It handles baseline discrimination, spectral dispersion.
 GRIP currently models the histogram of the data in order to get:
-    - the self-calibrated null depth
-    - the mean and standard deviation of a normally distributed observable (e.g. OPD)
+- the self-calibrated null depth
+- the mean and standard deviation of a normally distributed observable (e.g. OPD)
 
 GRIP currently features several optimizing strategy:
-    - least squares
-    - maximum likelihood
-    - MCMC (with the emcee library)
+- least squares
+- maximum likelihood
+- MCMC (with the emcee library)
 
 It can work on GPU thanks to the cupy library but it does not handle Jax yet.
 

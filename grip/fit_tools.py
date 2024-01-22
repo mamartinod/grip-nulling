@@ -72,8 +72,20 @@ def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins,
 
 def ramanujan(n):
     """
-    Ramanujan approximation to calculate the factorial of an integer. Work very well for any integer >= 2.
+    Ramanujan approximation to calculate the factorial of an integer. 
+    Work very well for any integer >= 2.
     https://en.wikipedia.org/wiki/Stirling%27s_approximation
+
+    Parameters
+    ----------
+    n : int or array
+        Value to calculate its factorial.
+
+    Returns
+    -------
+    rama : float or array
+        Factorial of ``n``.
+
     """
     stirling = n * np.log(n) - n
     rama = stirling + 1/6 * np.log(8*n**3 + 4*n**2 + n + 1/30) + np.log(np.pi)/2
@@ -140,7 +152,7 @@ def neg_log_multinomial(params, data, func_model, *args, **kwargs):
         
 def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None, diff_step=None, func_args=(), func_kwargs={}):
     """
-    Wrapper using the ``scipy.optimize.minimize`` with the L-BFGS-B algorithm.
+    Wrapper using the ``scipy.optimize.minimize`` with the L-BFGS-B algorithm.    
 
     Parameters
     ----------
@@ -156,10 +168,14 @@ def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None
         Dataset to fit (could be a histogram).
     yerr : array-like, optional
         uncertainties on the data. The default is None.
+    bounds : TYPE, optional
+        DESCRIPTION. The default is None.
     bounds : array-like, optional
         Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),...). The default is None.
-    diff_step : array of the same size as ``p0``, optional
-        differential step used by the minimize algorithm to explore the parameter space. The default is None.
+    func_args : list-like, optional
+        Arguments to pass to ``func_model``. The default is ().
+    func_kwargs : dic-like, optional
+        Keywords to pass to ``func_model``. The default is {}.
 
     Returns
     -------
@@ -171,7 +187,6 @@ def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None
         Complete return of the ``scipy.optimize.minimize`` function.
 
     """
-
 
     if yerr is None:
         temp = [ydata, func_model, xdata]
@@ -223,10 +238,7 @@ def log_prior_uniform(params, bounds):
 
 def log_posterior(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs={}, neg_lklh=True):
     """
-    Log posterior to maximize to find the best parameters.
-    The log posterior is the sum of a uniform prior and the likelihood.
-    Built-in likelihood function like ``neg_log_multinomial`` returns a negative
-    likelihood.
+    Posterior of the data.
 
     Parameters
     ----------
@@ -274,6 +286,43 @@ def log_posterior(params, lklh_func, bounds, func_model, data, func_args=(), fun
 
 def mcmc(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs={}, 
              neg_lklh=True, nwalkers=6, nstep=2000, progress_bar=True):
+    """
+    Perform a MCMC with ``emcee`` library.
+
+    Parameters
+    ----------
+    params : list-like
+        Initial guess.
+    lklh_func : callable function
+        Function returning the likelihood.
+    bounds : tuple-like
+        Bounds of the parameters. The shape is ((min1, max1), ..., (minN, maxN)) .
+    func_model : callable function
+        Function of the model to fit.
+    data : nd-array
+        Data to fit.
+    func_args : tuple, optional
+        Tuple of arguments to pass to ``func_model``. The default is ().
+    func_kwargs : dict, optional
+        Dictionary of keywords to pass to ``func_model``. The default is {}.
+    neg_lklh : bool, optional
+        Indicates if the likelihood function returns a negative value. The default is True.
+    nwalkers : int, optional
+        Number of walkers to use in the MCMC. The default is 6.
+    nstep : int, optional
+        Number of steps for the walkers. The default is 2000.
+    progress_bar : bool, optional
+        Display the progress bar. The default is True.
+
+    Returns
+    -------
+    samples : nd-array
+        Samples from the MCMC algorithm. The shape is (``nwalkers``, ``nstep``)
+    flat_samples : 1d-array
+        Flatten chains with already discarded burn-in. \
+            The burn-in values is defined as ``min(nstep//10, 600)``.
+
+    """
 
     ndim = params.size
     norm_params = params.copy()
@@ -337,7 +386,8 @@ def calculate_chi2(params, data, func_model, *args, **kwargs):
 
 def lstsqrs_fit(func_model, p0, xdata, ydata, yerr=None, bounds=None,
              diff_step=None, x_scale=1, func_args=(), func_kwargs={}):
-    """Fit the function of the NSC.
+    """
+    Fit the function of the NSC.
 
     Adaptation from the Scipy wrapper ``curve_fit``.
     The Scipy wrapper ``curve_fit`` does not give all the outputs of the
@@ -351,6 +401,43 @@ def lstsqrs_fit(func_model, p0, xdata, ydata, yerr=None, bounds=None,
 
     For exact documentation of the arguments ``diff_step`` and ``x_scale``,
     see https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares.
+
+    Parameters
+    ----------
+    func_model : function
+        Function to fit the data.
+    p0 : tuple-like
+        Initial guess.
+    xdata : 1d-array
+        Flatten array of the x-axis of the data.
+    ydata : 1d-array
+        Flatten array of the data.
+    yerr : 1d-array, optional
+        Flatten array of the data error. The default is None.
+    bounds : tuple-like, optional
+        Tuple-like of shape ((min1, max1), ..., (minN, maxN)). The default is None.
+    diff_step : list, optional
+        Determines the relative step size for the finite difference approximation of the Jacobian.\
+            See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares.\
+                The default is None.
+    x_scale : TYPE, optional
+        Characteristic scale of each variable.\
+            See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares. \
+                The default is 1.
+    func_args : tuple, optional
+        Tuple of arguments to pass to the cost function. The default is ().
+    func_kwargs : dict, optional
+        Dictionary of arguments to pass to the cost function. The default is {}.
+
+    Returns
+    -------
+    popt : list
+        List of optimised parameters.
+    pcov : 2d-array
+        Covariance matrix of the optimised parameters.
+    res : OptimizeResult
+        Full output of the fitting algorithm.
+
     """
     
     bounds = np.array(bounds)

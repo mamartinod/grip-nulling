@@ -11,21 +11,26 @@ import sys
 
 
 def get_zeta_coeff(path, wl_scale, plot=False, **kwargs):
-    """Interpolate the zeta coefficients for the requested wavelengths.
+    """
+    Interpolate the zeta coefficients for the requested wavelengths.
 
-    :param path: Path to the zeta coefficients' file.
-    :type path: string
-    :param wl_scale: List of wavelength for which we want the zeta\
-        coefficients.
-    :type wl_scale: array
-    :param plot: If ``True``, the plot of the interpolated zeta coefficients\
-        curve is displayed, defaults to False
-    :type plot: bool, optional
-    :param **kwargs: Bins the zeta coefficient between the specified\
-        wavelength in this keyword.
-    :type **kwargs: extra keyword arguments
-    :return: Dictionary of the interpolated zeta coefficients.
-    :rtype: dict
+    Parameters
+    ----------
+    path : string
+        Path to the zeta coefficients' file.
+    wl_scale : array
+        List of wavelength for which we want the zeta coefficients.
+    plot : bool, optional
+        If ``True``, the plot of the interpolated zeta coefficients\
+            curve is displayed. The default is False.
+    **kwargs : extra keyword arguments
+        ``wl_bounds`` prunes the zeta coeff arrays for them to all have\
+        the same wavelength scale.
+
+    Returns
+    -------
+    coeff_new : dict
+        Dictionary of the interpolated zeta coefficients.
 
     """
     coeff_new = {}
@@ -63,6 +68,25 @@ def get_zeta_coeff(path, wl_scale, plot=False, **kwargs):
     return coeff_new
 
 def load_data(data, wl_edges, kw_to_extract):
+    """
+    Load the data, select the desired keywords and store the selected data\
+        in a dictionary.
+
+    Parameters
+    ----------
+    data : list
+        Sequence of hdf5 files.
+    wl_edges : 2-tuple
+        Minimum and maximum values of the wavelength to keep.
+    kw_to_extract : list
+        Sequence of keywords to extract from the HDF5 files.
+
+    Returns
+    -------
+    data_dic : dict
+        Dictionary containing the loaded data.
+
+    """
 
     wl_scale = []
     data_dic = {}
@@ -121,21 +145,24 @@ class Logger(object):
     """
 
     def __init__(self, log_path):
-        """Init instance of the class.
+        """
+        Init instance of the class.
 
-        :param log_path: path to the log file.
-        :type log_path: str
+        Parameters
+        ----------
+        log_path : str
+            path to the log file.
 
         """
-        self.orig_stdout = sys.stdout
-        self.terminal = sys.stdout
-        self.log = open(log_path, "a")
 
     def write(self, message):
-        """Print the content in the terminal and in the log file.
+        """
+        Print the content in the terminal and in the log file.
 
-        :param message: message to print and log
-        :type message: str
+        Parameters
+        ----------
+        message : str
+            message to print and log.
 
         """
         self.terminal.write(message)
@@ -161,23 +188,29 @@ class Logger(object):
         print('Stdout closed')
         
 def get_injection_and_spectrum(photoA, photoB, wl_scale,
-                               wl_bounds=(1400, 1700)):
-    """Get the distributions of the broadband injections and the spectra of\
+                               wl_bounds):
+    """
+    Get the distributions of the broadband injections and the spectra of\
         beams A and B.
 
-    :param photoA: Values of the photometric output of beam A.
-    :type photoA: array-like
-    :param photoB: Values of the photometric output of beam B.
-    :type photoB: array-like
-    :param wl_scale: Wavelength of the spectra in nm.
-    :type wl_scale: array-like
-    :param wl_bounds: Boundaries between which the spectra are extracted.
-        The wavelengths are expressed in nm, defaults to (1400, 1700)
-    :type wl_bounds: 2-tuple, optional
-    :return: The first tuple contains the histograms of the broadband
-            injection of beams A and B, respectively. The second tuple
-            contains the spectra of beams A and B, respectively.
-    :rtype: 2-tuple of 2-tuple
+    Parameters
+    ----------
+    photoA : array-like
+        Values of the photometric output of beam A.
+    photoB : array-like
+        Values of the photometric output of beam B.
+    wl_scale : array-like
+        Wavelength of the spectra in nm.
+    wl_bounds : 2-tuple, optional
+        Boundaries between which the spectra are extracted.\
+            The wavelengths are expressed in nm.
+
+    Returns
+    -------
+    2-tuple of 2-tuple
+        The first tuple contains the histograms of the broadband\
+                injection of beams A and B, respectively. The second tuple\
+                contains the spectra of beams A and B, respectively.
 
     """
     # Select the large bandwidth on which we measure the injection
@@ -205,17 +238,23 @@ def get_injection_and_spectrum(photoA, photoB, wl_scale,
 
 
 def check_init_guess(guess, l_bound, u_bound):
-    """Check the initial guess in config file are between the bounds for a\
+    """
+    Check the initial guess in config file are between the bounds for a\
         parameter to fit.
 
-    :param guess: value of the initial guess in config file
-    :type guess: float
-    :param l_bound: value of the lower bound in config file
-    :type l_bound: float
-    :param u_bound: value of the upper bound in config file
-    :type u_bound: float
-    :return: ``True`` if the initial guess is not between the bounds.
-    :rtype: bool
+    Parameters
+    ----------
+    guess : float
+        value of the initial guess in config file.
+    l_bound : float
+        value of the lower bound in config file.
+    u_bound : float
+        value of the upper bound in config file.
+
+    Returns
+    -------
+    check : bool
+        ``True`` if the initial guess is not between the bounds.
 
     """
     check = np.any(guess <= np.array(u_bound)[:, 0]) or np.any(

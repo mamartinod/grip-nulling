@@ -46,11 +46,11 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     params_to_fit : tuple-like
         DESCRIPTION.
     wl_scale0 : 1D array
-        DESCRIPTION.
+        Wavelength scale.
     instrument_model : function
-        DESCRIPTION.
+        Function simulating the instrument.
     instrument_args : tuple, must contain same type of data (all float or all array of the same shape)
-        DESCRIPTION.
+        List of arguments to pass to ``instrument_model'' which are not fitted.
     cdfs : tuple. First put CDF of quantities which does not depend on the wavelength.
         For wavelength-dependant quantity, 1st axis = wavelength.
     rvus : tuple. First put CDF of quantities which does not depend on the wavelength.
@@ -70,9 +70,9 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     diag_rv_1d = []
     diag_rv_2d = []
 
-    """
-    Set some verbose to track the behaviour of the fitting algorithm
-    """
+    # """
+    # Set some verbose to track the behaviour of the fitting algorithm
+    # """
     count = create_histogram_model.call_count # Count number of times a function is called
     text_intput = (int(count), *params_to_fit)
     
@@ -81,26 +81,26 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     else:
         print(text_intput)
 
-    """
-    The user can choose to normalize the histogram by its sum or not
-    """
+    # """
+    # The user can choose to normalize the histogram by its sum or not
+    # """
     if 'normed' in kwargs.keys() and kwargs['normed'] == False:
         normed = False
     else:
         normed = True
 
-    """
-    Unpack the parameters to fit.
-    The astrophysical null or visibility MUST be the first argument.
-    The two others MUST be the location and scale parameter of a normal distribution.
-    """
+    # """
+    # Unpack the parameters to fit.
+    # The astrophysical null or visibility MUST be the first argument.
+    # The two others MUST be the location and scale parameter of a normal distribution.
+    # """
     na = params_to_fit[0]
     mu = params_to_fit[1]
     sig = params_to_fit[2]
 
-    """
-    Set the parameters of the MC part of the creation of the histogram
-    """
+    # """
+    # Set the parameters of the MC part of the creation of the histogram
+    # """
     if 'n_samp_per_loop' in kwargs.keys():
         n_samp_per_loop = int(kwargs['n_samp_per_loop'])
     else:
@@ -111,16 +111,16 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     else:
         nloop = 1
 
-    """
-    Prepare the canvas to store the model of the histogram
-    """
+    # """
+    # Prepare the canvas to store the model of the histogram
+    # """
     # Axes: spectral channel, number of bins
     accum = cp.zeros((xbins.shape[0], xbins.shape[1]-1), dtype=cp.float32)
 
-    """
-    Some random values do not depend on the spectral channels 
-    and must be generated out of the loop on the wavelength
-    """
+    # """
+    # Some random values do not depend on the spectral channels 
+    # and must be generated out of the loop on the wavelength
+    # """
     # Spot 1D & 2D cdfs
     cdfs_ndim = []
     for elt in cdfs:
@@ -134,18 +134,18 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     rv_forfit = rv_generator(rv_forfit_axis, rv_forfit_cdf, n_samp_per_loop, rvu_forfit)
     rv_forfit = rv_forfit.astype(dtypesize)
 
-    """
-    Number of samples to simulate is high and the memory is low so we iterate
-    to create an average histogram
-    """
+    # """
+    # Number of samples to simulate is high and the memory is low so we iterate
+    # to create an average histogram
+    # """
     for _ in range(nloop):
         diag_temp = []
         diag_rv_1d_temp = []
         diag_rv_2d_temp = []
 
-        """
-        Generation of the random values of the quantities independant from spectral channels
-        """
+        # """
+        # Generation of the random values of the quantities independant from spectral channels
+        # """
         rv1d_arr = cp.zeros((len(idx_1d_cdfs)+1, n_samp_per_loop), dtype=dtypesize)
         rv1d_arr[0] = rv_forfit
         # Generate random values from the 1D-cdfs
@@ -158,9 +158,9 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
         diag_rv_1d_temp.append(rv1d_arr)
 
         for k in range(wl_scale0.size):  # Iterate over the wavelength axis
-            """
-            Generate and pack random values of quantities which depend on the spectral axis.
-            """
+            # """
+            # Generate and pack random values of quantities which depend on the spectral axis.
+            # """
             rv2d_arr = cp.zeros((len(idx_2d_cdfs), n_samp_per_loop), dtype=dtypesize)
             for i in range(len(idx_2d_cdfs)):
                 idx = idx_2d_cdfs[i] # Select the quantity to MC
@@ -170,36 +170,36 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
 
             diag_rv_2d_temp.append(rv2d_arr)
 
-            """
-            Generate a signal delivered by the instrument given the input parameters
-            """
+            # """
+            # Generate a signal delivered by the instrument given the input parameters
+            # """
             out = instrument_model(na, wl_scale0[k], k, *instrument_args, *rv1d_arr, *rv2d_arr)
             diag_temp.append(out[1:])
             out = out[0]
 
-            """
-            Clean the signal from NaNs.
-            """
+            # """
+            # Clean the signal from NaNs.
+            # """
             out = out[~cp.isnan(out)]  # Remove NaNs
             out = cp.sort(out)
 
-            """
-            Calculate the histogram of this signal
-            """
+            # """
+            # Calculate the histogram of this signal
+            # """
             bins = cp.asarray(xbins[k], dtype=cp.float32)
             pdf_null = cp.histogram(out, bins)[0]
 
-            """
-            Store it in the multi-spectral histogram
-            """
+            # """
+            # Store it in the multi-spectral histogram
+            # """
             if normed:
                 accum[k] += pdf_null / cp.sum(pdf_null)
             else:
                 accum[k] += pdf_null
 
-            """
-            End of loop on spectral channels
-            """
+            # """
+            # End of loop on spectral channels
+            # """
 
         diag.append(diag_temp)
         diag_rv_1d.append(diag_rv_1d_temp)
@@ -221,34 +221,34 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
 
 def basin_hoppin_values(mu0, sig0, na0, bounds_mu, bounds_sig,
                         bounds_na):
-    """Create several initial guesses.
+    """
+    Create several initial guesses.
 
     Create as many as initial guess as there are basin hopping iterations
     to do.
     The generation of these values are done with a normal distribution.
 
-    :param mu0: Instrumental OPD around which random initial guesses are
-                    created.
-    :type mu0: float
-    :param sig0: Instrumental OPD around which random initial guesses are
-                    created.
-    :type sig0: float
-    :param na0: Null depth of the source around which random initial guesses
-                are created.
-    :type na0: float
-    :param bounds_mu: Lower and upper bounds between which the random values of
-                    **mu_opd** must be.
-    :type bounds_mu: 2-tuple
-    :param bounds_sig: Lower and upper bounds between which the random values
-                    of **sig_opd** must be.
-    :type bounds_sig: 2-tuple
-    :param bounds_na: Lower and upper bounds between which the random values of
-                    **na** must be.
-    :type bounds_na: 2-tuple
-    :return: New initial guess for **mu_opd**,
-            new initial guess for **sig_opd**,
-            new initial guess for **na**.
-    :rtype: 3-tuple
+    Parameters
+    ----------
+    mu0 : float
+        Instrumental OPD around which random initial guesses are created.
+    sig0 : float
+        Instrumental OPD around which random initial guesses are created.
+    na0 : float
+        Null depth of the source around which random initial guesses are created.
+    bounds_mu : 2-tuple
+        Lower and upper bounds between which the random values of ``mu_opd`` must be.
+    bounds_sig : 2-tuple
+        Lower and upper bounds between which the random values of ``sig_opd`` must be.
+    bounds_na : 2-tuple
+        Lower and upper bounds between which the random values of ``na`` must be.
+
+    Returns
+    -------
+    out: 3-tuple
+        New initial guess for ``mu_opd``,
+        new initial guess for ``sig_opd``,
+        new initial guess for ``na``
 
     """
     print('Random withdrawing of init guesses')
@@ -279,7 +279,8 @@ def basin_hoppin_values(mu0, sig0, na0, bounds_mu, bounds_sig,
 
     print('Random drawing done')
 #    np.random.set_state(orig_seed)
-    return mu_opd, sig_opd, na
+    out = (mu_opd, sig_opd, na)
+    return out
 
 
 
@@ -414,21 +415,26 @@ computeCdfCuda = cp.ElementwiseKernel(
 
 
 def computeCdf(absc, data, mode, normed):
-    """Compute the empirical cumulative density function (CDF) on GPU\
-        with CUDA.
+    """
+    Compute the empirical cumulative density function (CDF) on GPU with CUDA.
 
-    :param absc: Abscissa of the CDF.
-    :type absc: cupy array
-    :param data: Data used to create the CDF.
-    :type data: cupy array
-    :param mode: If ``ccdf``, the survival function (complementary of the CDF)\
-        is calculated instead.
-    :type mode: string
-    :param normed: If ``True``, the CDF is normed so that the maximum is\
-        equal to 1.
-    :type normed: bool
-    :return: CDF of **data**.
-    :rtype: cupy array
+    Parameters
+    ----------
+    absc : cupy array
+        Abscissa of the CDF.
+    data : cupy array
+        Data used to create the CDF.
+    mode : string
+        If ``ccdf``, the survival function (complementary of the CDF)\
+            is calculated instead.
+    normed : bool
+        If ``True``, the CDF is normed so that the maximum is\
+            equal to 1.
+
+    Returns
+    -------
+    cdf : cupy array
+        CDF of ``data``.
 
     """
     cdf = cp.zeros(absc.shape, dtype=cp.float32)
@@ -449,16 +455,22 @@ def computeCdf(absc, data, mode, normed):
 
 
 def rv_generator_wPDF(bins_cent, pdf, nsamp):
-    """Random values generator based on the PDF.
+    """
+    Random values generator based on the PDF.
 
-    :param bins_cent: Centered bins of the PDF.
-    :type bins_cent: array
-    :param pdf: Normalized arbitrary PDF to use to generate rv.
-    :type pdf: array
-    :param nsamp: Number of values to generate.
-    :type nsamp: int
-    :return: Array of random values generated from the PDF.
-    :rtype: array
+    Parameters
+    ----------
+    bins_cent : array
+        Centered bins of the PDF.
+    pdf : array
+        Normalized arbitrary PDF to use to generate rv.
+    nsamp : int
+        Number of values to generate.
+
+    Returns
+    -------
+    output_samples : array
+        Array of random values generated from the PDF.
 
     """
     bin_width = bins_cent[1] - bins_cent[0]
@@ -477,16 +489,24 @@ def rv_generator_wPDF(bins_cent, pdf, nsamp):
 
 
 def rv_generator(absc, cdf, nsamp, rvu=None):
-    """Random values generator based on the CDF.
+    """
+    Random values generator based on the CDF.
 
-    :param absc: Abscissa of the CDF;
-    :type absc: cupy array
-    :param cdf: Normalized arbitrary CDF to use to generate rv.
-    :type cdf: cupy array
-    :param nsamp: Number of values to generate.
-    :type nsamp: int
-    :return: Array of random values generated from the CDF.
-    :rtype: array
+    Parameters
+    ----------
+    absc : cupy array
+        Abscissa of the CDF.
+    cdf : cupy array
+        Normalized arbitrary CDF to use to generate rv.
+    nsamp : int
+        Number of values to generate.
+    rvu : TYPE, optional
+        Use the same sequence of uniformly random values. The default is None.
+
+    Returns
+    -------
+    output_samples : cupy array
+        Sequence of random values following the CDF.
 
     """
     cdf, mask = cp.unique(cdf, True)
@@ -503,17 +523,23 @@ def rv_generator(absc, cdf, nsamp, rvu=None):
 
 
 def computeCdfCpu(rv, x_axis, normed=True):
-    """Compute the empirical cumulative density function (CDF) on CPU.
+    """
+    Compute the empirical cumulative density function (CDF) on CPU.
 
-    :param rv: data used to compute the CDF.
-    :type rv: array
-    :param x_axis: Abscissa of the CDF.
-    :type x_axis: array
-    :param normed:  If ``True``, the CDF is normed so that the maximum is\
-        equal to 1., defaults to True
-    :type normed: bool, optional
-    :return: CDF of the **data**,  Indexes of cumulated values.
-    :rtype: tuple
+    Parameters
+    ----------
+    rv : array
+        data used to compute the CDF.
+    x_axis : array
+        Abscissa of the CDF.
+    normed : bool, optional
+        If ``True``, the CDF is normed so that the maximum is\
+            equal to 1. The default is True.
+
+    Returns
+    -------
+    tuple
+        CDF of the **data**,  Indexes of cumulated values.
 
     """
     cdf = np.ones(x_axis.size)*rv.size
@@ -538,15 +564,20 @@ def computeCdfCpu(rv, x_axis, normed=True):
 
 
 def computeCdfCupy(rv, x_axis):
-    """Compute the empirical cumulative density function (CDF) on GPU\
-        with cupy.
+    """
+    Compute the empirical cumulative density function (CDF) on GPU with cupy.
 
-    :param rv: Data used to compute the CDF.
-    :type rv: array
-    :param x_axis: Abscissa of the CDF.
-    :type x_axis: array
-    :return: CDF of **data**.
-    :rtype: array
+    Parameters
+    ----------
+    rv : array
+        Data used to compute the CDF.
+    x_axis : array
+        Abscissa of the CDF.
+
+    Returns
+    -------
+    cdf : array
+        CDF of ``data``.
 
     """
     cdf = cp.ones(x_axis.size, dtype=cp.float32)*rv.size
@@ -568,14 +599,20 @@ def computeCdfCupy(rv, x_axis):
 
 
 def getErrorNull(data_dic, dark_dic):
-    """Compute the error of the null depth.
+    """
+    Compute the error of the null depth.
 
-    :param data_dic: Dictionary of the data from ``load_data``.
-    :type data_dic: dict
-    :param dark_dic: Dictionary of the dark from ``load_data``.
-    :type dark_dic: dict
-    :return: Array of the error on the null depths.
-    :rtype: array
+    Parameters
+    ----------
+    data_dic : dict
+        Dictionary of the data from ``load_data``.
+    dark_dic : dict
+        Dictionary of the dark from ``load_data``.
+
+    Returns
+    -------
+    std_null : array
+        Array of the error on the null depths.
 
     """
     var_Iminus = dark_dic['Iminus'].var(axis=-1)[:, None]
@@ -588,20 +625,23 @@ def getErrorNull(data_dic, dark_dic):
     return std_null
 
 
-
-
-
 def getErrorCDF(data_null, data_null_err, null_axis):
-    """Calculate the error of the CDF. It uses the cupy library.
+    """
+    Calculate the error of the CDF. It uses the cupy library.
 
-    :param data_null: Null depth measurements used to create the CDF.
-    :type data_null: array
-    :param data_null_err: Error on the null depth measurements.
-    :type data_null_err: array
-    :param null_axis: Abscissa of the CDF.
-    :type null_axis: array
-    :return: Error of the CDF.
-    :rtype: array
+    Parameters
+    ----------
+    data_null : array
+        Null depth measurements used to create the CDF.
+    data_null_err : array
+        Error on the null depth measurements.
+    null_axis : array
+        Abscissa of the CDF.
+
+    Returns
+    -------
+    array
+        Error of the CDF.
 
     """
     data_null = cp.asarray(data_null)
@@ -618,16 +658,22 @@ def getErrorCDF(data_null, data_null_err, null_axis):
 
 
 def getErrorPDF(data_null, data_null_err, null_axis):
-    """Calculate the error of the PDF. It uses the cupy library.
+    """
+    Calculate the error of the PDF. It uses the cupy library.
 
-    :param data_null: Null depth measurements used to create the PDF.
-    :type data_null: array
-    :param data_null_err: Error on the null depth measurements.
-    :type data_null_err: array
-    :param null_axis: Abscissa of the CDF.
-    :type null_axis: array
-    :return: Error of the PDF.
-    :rtype: array
+    Parameters
+    ----------
+    data_null : array
+        Null depth measurements used to create the PDF.
+    data_null_err : array
+        Error on the null depth measurements.
+    null_axis : array
+        Abscissa of the CDF.
+
+    Returns
+    -------
+    array
+        Error of the PDF.
 
     """
     data_null = cp.asarray(data_null)
@@ -646,37 +692,51 @@ def getErrorPDF(data_null, data_null_err, null_axis):
 
 
 def doubleGaussCdf(x, mu1, mu2, sig1, sig2, A):
-    """Calculate the CDF of the sum of two normal distributions.
+    """
+    Calculate the CDF of the sum of two normal distributions.
 
-    :param x: Abscissa of the CDF.
-    :type x: array
-    :param mu1: Location parameter of the first normal distribution.
-    :type mu1: float
-    :param mu2: Location parameter of the second normal distribution.
-    :type mu2: float
-    :param sig1: Scale parameter of the first normal distribution.
-    :type sig1: float
-    :param sig2: Scale parameter of the second normal distribution.
-    :type sig2: float
-    :param A: Relative amplitude of the second distribution with respect to the first one.
-    :type A: float
-    :return: CDF of the double normal distribution.
-    :rtype: array
+    Parameters
+    ----------
+    x : array
+        Abscissa of the CDF.
+    mu1 : float
+        Location parameter of the first normal distribution.
+    mu2 : float
+        Location parameter of the second normal distribution.
+    sig1 : float
+        Scale parameter of the first normal distribution.
+    sig2 : float
+        Scale parameter of the second normal distribution.
+    A : float
+        Relative amplitude of the second distribution with respect to the first one.
+
+    Returns
+    -------
+    array
+        CDF of the double normal distribution.
 
     """
     return sig1/(sig1+A*sig2) * ndtr((x-mu1)/(sig1)) + A*sig2/(sig1+A*sig2) * ndtr((x-mu2)/(sig2))
 
 
 def getErrorBinomNorm(pdf, data_size, normed):
-    """Calculate the error of the PDF knowing the number of elements in a bin\
+    """
+    Calculate the error of the PDF knowing the number of elements in a bin\
         is a random value following a binomial distribution.
 
-    :param pdf: Normalized PDF which the error is calculated.
-    :type pdf: array
-    :param data_size: Number of elements used to calculate the PDF.
-    :type data_size: int
-    :return: Error of the PDF.
-    :rtype: array
+    Parameters
+    ----------
+    pdf : array
+        Normalized PDF which the error is calculated.
+    data_size : int
+        Number of elements used to calculate the PDF.
+    normed : bool
+        Set to ``True`` if ``pdf`` is normalised, ``False`` otherwise.
+
+    Returns
+    -------
+    pdf_err : array
+        Error of the PDF.
 
     """
     if normed:
@@ -688,28 +748,31 @@ def getErrorBinomNorm(pdf, data_size, normed):
 
 
 def rv_gen_doubleGauss(nsamp, mu1, mu2, sig, A, target):
-    """Random values generator according to a double normal distribution with\
+    """
+    Random values generator according to a double normal distribution with\
         the same scale factor.
 
-    This function uses cupy to generate the values.
+    Parameters
+    ----------
+    nsamp : int
+        Number of samples to generate.
+    mu1 : float
+        Location parameter of the first normal distribution.
+    mu2 : float
+        Location parameter of the second normal distribution.
+    sig : float
+        Scale parameter of the both normal distributions.
+    A : float
+        Relative amplitude of the second distribution with respect to\
+            the first one.
+    target : string
+        If ``target = cpu``, the random values are transferred\
+            from the graphic card memory to the RAM.
 
-    :param nsamp: DESCRIPTION
-    :type nsamp: int
-    :param mu1: Location parameter of the first normal distribution.
-    :type mu1: float
-    :param mu2: Location parameter of the second normal distribution.
-    :type mu2: float
-    :param sig: Scale parameter of the both normal distributions.
-    :type sig: float
-    :param A: Relative amplitude of the second distribution with respect to\
-        the first one.
-    :type A: float
-    :param target: If ``target = cpu``, the random values are transferred\
-        from the graphic card memory to the RAM.
-    :type target: str
-    :return: Random values generated according to the double normal\
-        distribution.
-    :rtype: array or cupy array
+    Returns
+    -------
+    rv : array or cupy array
+        Random values generated according to the double normal distribution.
 
     """
     x, step = cp.linspace(-2500, 2500, 10000, endpoint=False,
@@ -724,14 +787,23 @@ def rv_gen_doubleGauss(nsamp, mu1, mu2, sig, A, target):
     return rv
 
 def get_dark_cdf(dk, wl_scale0):
-    """Get the CDF for generating RV from measured dark distributions.
+    """
+    Get the CDF for generating RV from measured dark distributions.
 
-    :param dk: dark data
-    :type dk: array-like
-    :param wl_scale0: wavelength axis
-    :type wl_scale0: array
-    :return: axis of the CDF and the CDF
-    :rtype: 2-tuple
+    Parameters
+    ----------
+    dk : array-like
+        Dark data.
+    wl_scale0 : array
+        Wavelength axis.
+
+    Returns
+    -------
+    dark_axis : 2d-array
+        axis of the CDF, first axis is the wavelength.
+    dark_cdf : 2d-array
+        CDF, first axis is the wavelength.
+
     """
     dark_size = [len(np.linspace(dk[i].min(), dk[i].max(),
                                  np.size(np.unique(dk[i])),

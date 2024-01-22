@@ -1,4 +1,4 @@
-Fit tools
+Fitting tools
 =========
 
 .. automodule:: fit_tools
