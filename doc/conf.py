@@ -43,5 +43,6 @@ autodoc_mock_imports = [
 'itertools',
 'timeit',
 'cupy',
-'cupyx'
+'cupyx',
+'grip'
 ]
