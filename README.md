@@ -1,4 +1,4 @@
-# Nulling Data Processing Software
+# Generic data Reduction for nulling Interferometry Package
 Reaching extreme interferometric contrasts relies as much on the hardware as on the data processing technique, which is one of the main research pillars of SCIFY. 
 Over the past decade, self-calibration data reduction techniques have been developed and proven to improve the final contrast after post-processing by a factor of at least 10 over classical reduction techniques (Hanot et al. 2011, Mennesson et al. 2011, Defrère et al. 2016, Mennesson et al. 2016, Norris et al. 2020, Martinod et al. 2021). 
 Over the year, several nulling self-calibration pipelines have been written. Within SCIFY, the goals are:
