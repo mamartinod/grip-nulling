@@ -1,0 +1,69 @@
+.. grip documentation master file, created by
+   sphinx-quickstart on Fri Jan 19 15:50:28 2024.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+GRIP documentation
+==================
+
+What is GRIP?
+-------------
+
+GRIP (Generic data Reduction for nulling Interferometry Package) is a toolbox for reducing nulling data
+with the nulling self-calibration method (NSC).
+These tools can work with data coming from any nuller nuller.
+It handles baseline discrimination, spectral dispersion.
+GRIP currently models the histogram of the data in order to get:
+    - the self-calibrated null depth
+    - the mean and standard deviation of a normally distributed observable (e.g. OPD)
+
+GRIP currently features several optimizing strategy:
+    - least squares
+    - maximum likelihood
+    - MCMC (with the emcee library)
+
+It can work on GPU thanks to the cupy library but it does not handle Jax yet.
+
+Dependencies
+------------
+- numpy
+- scipy
+- matplotlib
+- h5py
+- emcee
+- itertools
+- timeit
+- cupy
+
+Tutorials
+---------
+1. How to get the histograms of the data and the models
+2. How to scan the parameter space with the Chi2 estimator
+3. How to scan the parameter space with a binomial likelihood estimator
+4. How to perform a fit with a Chi2 estimatior
+5. How to perform a fit with a binomial likelihood estimator
+6. How to use a MCMC approach
+7. How to build your own model of the instrument
+
+Future work
+-----------
+Contributions are welcome.
+
+- Port it to Jax
+- Add machine learning techniques
+- Extend the usecase to interferometry
+- Extend the capability to fit an arbitrary number of parameters
+- Design a logo
+
+Navigation
+==========
+.. toctree::
+   :maxdepth: 1
+
+   preprocessing
+   plots
+   instrument_models
+   histogram_tools
+   generic
+   fit_tools
+
