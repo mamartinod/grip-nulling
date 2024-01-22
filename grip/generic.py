@@ -158,6 +158,7 @@ class Logger(object):
     def write(self, message):
         """
         Print the content in the terminal and in the log file.
+        
 
         Parameters
         ----------
@@ -169,7 +170,8 @@ class Logger(object):
         self.log.write(message)
 
     def flush(self):
-        """Present for python 3 compatibility.
+        """
+        Present for python 3 compatibility.
 
         This flush method is needed for python 3 compatibility.
         This handles the flush command by doing nothing.
@@ -178,7 +180,8 @@ class Logger(object):
         pass
 
     def close(self):
-        """Close the log file.
+        """
+        Close the log file.
 
         Close the log file and print in the terminal is back to default
         settings.
