@@ -67,9 +67,9 @@ def get_zeta_coeff(path, wl_scale, plot=False, **kwargs):
 
     return coeff_new
 
-def load_data(data, wl_edges, kw_to_extract):
+def load_data(data, kw_to_extract, wl_edges):
     """
-    Load the data, select the desired keywords and store the selected data\
+    Load the data from HDF5 file format, select the desired keywords and store the selected data\
         in a dictionary.
 
     Parameters
@@ -124,7 +124,6 @@ def load_data(data, wl_edges, kw_to_extract):
         temp = data_dic[key]
         temp = [selt for elt in temp for selt in elt]
         temp = np.array(temp)
-        print(key, temp.shape)
         if temp.ndim > 1:
             temp = temp[:, mask]
         temp = temp.T # Put the wavelength axis first
@@ -141,37 +140,32 @@ class Logger(object):
     Class allowing to save the content of the console inside a txt file.
     Found on the internet, source lost.
     
-    To stop the log in the file, use the command ``sys.stdout.close()``.
+    To stop the log in the file, use the command ``sys.stdout.close()''.
     """
 
     def __init__(self, log_path):
-        """
-        Init instance of the class.
+        """Init instance of the class.
 
-        Parameters
-        ----------
-        log_path : str
-            path to the log file.
+        :param log_path: path to the log file.
+        :type log_path: str
 
         """
+        self.orig_stdout = sys.stdout
+        self.terminal = sys.stdout
+        self.log = open(log_path, "a")
 
     def write(self, message):
-        """
-        Print the content in the terminal and in the log file.
-        
+        """Print the content in the terminal and in the log file.
 
-        Parameters
-        ----------
-        message : str
-            message to print and log.
+        :param message: message to print and log
+        :type message: str
 
         """
         self.terminal.write(message)
         self.log.write(message)
 
     def flush(self):
-        """
-        Present for python 3 compatibility.
+        """Present for python 3 compatibility.
 
         This flush method is needed for python 3 compatibility.
         This handles the flush command by doing nothing.
@@ -180,8 +174,7 @@ class Logger(object):
         pass
 
     def close(self):
-        """
-        Close the log file.
+        """Close the log file.
 
         Close the log file and print in the terminal is back to default
         settings.
@@ -210,9 +203,9 @@ def get_injection_and_spectrum(photoA, photoB, wl_scale,
 
     Returns
     -------
-    2-tuple of 2-tuple
-        The first tuple contains the histograms of the broadband\
-                injection of beams A and B, respectively. The second tuple\
+    2-tuple of 2d-array
+        The first element contains the broadband\
+                injection of beams A and B, respectively. The second element\
                 contains the spectra of beams A and B, respectively.
 
     """
@@ -233,8 +226,9 @@ def get_injection_and_spectrum(photoA, photoB, wl_scale,
     fluxB = photoB.sum(axis=0)
     
     fluxes = np.array([fluxA, fluxB])
+    spectra = np.array([spectrumA, spectrumB])
 
-    return (fluxes, (spectrumA, spectrumB))
+    return (fluxes, spectra)
 
 
 

@@ -11,26 +11,17 @@ try:
 except ModuleNotFoundError:
     import numpy as cp
     from scipy.special import ndtr
+from functools import wraps
 
-class CountCalls:
-    """
-    This class counts the number of times a function is called.
-    It is used as a decorator
-    """
-    def __init__(self, func): 
-        self._count = 0 
-        self._func = func 
-    def __call__( self, *args, **kwargs): 
-        self._count += 1 
-        return self._func(*args,**kwargs) 
-    @property 
-    def call_count(self): 
-        return self._count
-    
-    def reset_count(self):
-        self._count = 0
-    
-@CountCalls
+def counted_calls(f):
+    @wraps(f)
+    def count_wrapper(*args, **kwargs):
+        count_wrapper.count += 1
+        return f(*args, **kwargs)
+    count_wrapper.count = 0
+    return count_wrapper
+
+@counted_calls
 def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, **kwargs):
     """
     Monte-Carlo simulator of the instrument model to give a histogram.
@@ -44,7 +35,7 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     xbins : 2D array
         1st axis = wavelength.
     params_to_fit : tuple-like
-        DESCRIPTION.
+        List of the parameters to fit.
     wl_scale0 : 1D array
         Wavelength scale.
     instrument_model : function
@@ -73,7 +64,8 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     # """
     # Set some verbose to track the behaviour of the fitting algorithm
     # """
-    count = create_histogram_model.call_count # Count number of times a function is called
+    # count = create_histogram_model.call_count # Count number of times a function is called
+    count = create_histogram_model.count # Count number of times a function is called
     text_intput = (int(count), *params_to_fit)
     
     if 'verbose' in kwargs.keys() and kwargs['verbose'] == False:
