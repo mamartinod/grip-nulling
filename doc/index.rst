@@ -41,7 +41,7 @@ Installation
 
 Tutorials
 ---------
-1. [How to get the histograms of the data and the models](../tutorial/grip_tuto_display_histograms_and_data.ipynb)
+1. How to get the histograms of the data and the models
 2. How to scan the parameter space with the Chi2 estimator
 3. How to scan the parameter space with a binomial likelihood estimator
 4. How to perform a fit with a Chi2 estimatior
@@ -58,6 +58,7 @@ Contributions are welcome.
 - Extend the usecase to interferometry
 - Extend the capability to fit an arbitrary number of parameters
 - Design a logo
+
 
 Navigation
 ==========
