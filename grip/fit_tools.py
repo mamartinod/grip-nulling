@@ -40,13 +40,17 @@ def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins,
         List of the CDF which are used to reproduce the statistics of the noises. There areas many sequences are noise sources to simulate.
     rvus : list of arrays
         List of uniform random values use to generate random values to reproduce the statistics of the noises. There areas many sequences are noise sources to simulate.
+    histo_err : TYPE, optional
+        DESCRIPTION. The default is None.
     **kwargs : keywords
-        Keywords to pass to the ``reate_histogram_model`` function.
+        Keywords to pass to the ``create_histogram_model`` function.
 
     Returns
     -------
     chi2map : nd-array
         Datacube containing the value of the cost function and the tested parameters.
+    param_axes : TYPE
+        DESCRIPTION.        
     steps : array
         Steps use to sample the parameters axes.
 

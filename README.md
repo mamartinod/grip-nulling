@@ -11,12 +11,10 @@ Find the documentation [here](https://mamartinod.github.io/grip/).
 
 # Tutorials
 1. [How to get the histograms of the data and the models](/tutorials/tuto1_get_histo_and_display.ipynb)
-2. How to scan the parameter space with the Chi2 estimator
-3. How to scan the parameter space with a binomial likelihood estimator
-4. How to perform a fit with a Chi2 estimatior
-5. How to perform a fit with a binomial likelihood estimator
-6. How to use a MCMC approach
-7. How to build your own model of the instrument
+2. [How to scan the parameter space with a binomial likelihood estimator](/tutorials/tuto2_explore_parameter_space.ipynb)
+3. [How to perform a fit with a binomial likelihood estimator](/tutorials/tuto3_fit_with_likelihood.ipynb)
+4. [How to use a MCMC approach](/tutorials/tuto4_use_of_mcmc.ipynb)
+5. How to build your own model of the instrument
 
 # Installation
 ## Dependencies
