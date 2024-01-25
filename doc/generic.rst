@@ -1,5 +1,5 @@
-Generic functions
-=================
+Module: Generic functions
+=========================
 
 .. automodule:: generic
    :members:

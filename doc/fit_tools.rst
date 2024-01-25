@@ -1,5 +1,5 @@
-Fitting tools
-=============
+Module: Fitting tools
+=====================
 
 .. automodule:: fit_tools
    :members:

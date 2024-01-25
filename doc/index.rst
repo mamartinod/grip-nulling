@@ -47,6 +47,7 @@ Future work
 -----------
 Contributions are welcome.
 
+- Build a double-Bracewell model
 - Port it to Jax
 - Add machine learning techniques
 - Extend the usecase to interferometry
@@ -57,8 +58,10 @@ Contributions are welcome.
 Navigation
 ==========
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
+   grip_nested_architecture
+   build_model
    preprocessing
    plots
    instrument_models

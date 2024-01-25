@@ -116,8 +116,8 @@ def neg_log_multinomial(params, data, func_model, *args, **kwargs):
         If ``func_model`` takes any keyword, they must be passed in a dictionary in the last position in *args.
     **kwargs : keywords arguments
         Keywords accepted: 
-            - ``verbose``: boolean to set to ``'False`` to deactivate the ``print`` in the ``func_model``.
-            - ``use_this_model`` (array) : uses the values from a model generated out of this function instead of calling ``func_model``.
+            - `use_this_model` (array) : uses the values from a model generated out of this function instead of calling `func_model`
+            - Keywords to pass to `func_model`
 
     Returns
     -------

@@ -1,5 +1,5 @@
-Built-in instrument models
-==========================
+Module: Built-in instrument models
+==================================
 
 .. automodule:: instrument_models
    :members:

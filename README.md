@@ -3,8 +3,10 @@ Reaching extreme interferometric contrasts relies as much on the hardware as on 
 Over the past decade, self-calibration data reduction techniques have been developed and proven to improve the final contrast after post-processing by a factor of at least 10 over classical reduction techniques (Hanot et al. 2011, Mennesson et al. 2011, Defrère et al. 2016, Mennesson et al. 2016, Norris et al. 2020, Martinod et al. 2021). 
 Over the year, several nulling self-calibration pipelines have been written. Within SCIFY, the goals are:
 1. to develop a generic nulling self-calibration pipeline with all state-of-the-art features of high-contrast nulling data reduction and validate it on existing nulling data obtained with the LBTI survey; 
-2. to improve the versatility and performance of the pipeline by adding dispersed modes and better ways to compute the error bars (e.g., MCMC);
-3. to make this software open-source so that it can serve the whole community and serve as a basis for future developments.
+2. to primarly focus on the use case of NOTT
+3. to improve the versatility and performance of the pipeline by adding dispersed modes and better ways to compute the error bars (e.g., MCMC);
+4. to make this software open-source so that it can serve the whole community and serve as a basis for future developments
+
 
 # Documentation
 Find the documentation [here](https://mamartinod.github.io/grip/).
@@ -14,7 +16,7 @@ Find the documentation [here](https://mamartinod.github.io/grip/).
 2. [How to scan the parameter space with a binomial likelihood estimator](/tutorials/tuto2_explore_parameter_space.ipynb)
 3. [How to perform a fit with a binomial likelihood estimator](/tutorials/tuto3_fit_with_likelihood.ipynb)
 4. [How to use a MCMC approach](/tutorials/tuto4_use_of_mcmc.ipynb)
-5. How to build your own model of the instrument
+5. [How to build your own model of the instrument](/tutorials/tuto5_build_your_own_model.ipynb)
 
 # Installation
 ## Dependencies
