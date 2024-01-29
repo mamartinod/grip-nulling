@@ -79,7 +79,7 @@ def binning(arr, binning, axis=0, avg=False):
     return arr, cropped_idx
 
 
-def sortFrames(dic_data, nb_frames_to_bin, quantile, factor_minus, factor_plus,
+def sortFrames(dic_data, kw_list, nb_frames_to_bin, quantile, factor_minus, factor_plus,
                which_null, starname, plot=False, save_path=''):
     """
     Perform sigmal-clipping to remove frames non-normally distributed\
@@ -104,6 +104,8 @@ def sortFrames(dic_data, nb_frames_to_bin, quantile, factor_minus, factor_plus,
     ----------
     dic_data : dict
         Contains the extracted data from files by the function ``load_data``.
+    kw_list: list-like of two elements
+        The 2 keywords of the data from `dic_data` to use.
     nb_frames_to_bin : int
         Number of frames to bin before applying the filter.\
             It is used to increase the SNR and exhibit the phase noise over\
@@ -136,9 +138,9 @@ def sortFrames(dic_data, nb_frames_to_bin, quantile, factor_minus, factor_plus,
     intensities: 2-tuple
         Arrays of fluxes in null and anti-null outputs.
     """
-    nb_frames_total = dic_data['Iminus'].shape[1]
-    Iminus = dic_data['Iminus'].mean(axis=0)
-    Iplus = dic_data['Iplus'].mean(axis=0)
+    nb_frames_total = dic_data[kw_list[0]].shape[1]
+    Iminus = dic_data[kw_list[0]].mean(axis=0)
+    Iplus = dic_data[kw_list[1]].mean(axis=0)
     Iminus, cropped_idx_minus = binning(Iminus, nb_frames_to_bin, avg=True)
     Iplus, cropped_idx_plus = binning(Iplus, nb_frames_to_bin, avg=True)
     std_plus = Iplus.std()

@@ -8,9 +8,11 @@ import numpy as np
 try:
     import cupy as cp
     from cupyx.scipy.special import ndtr
+    onGpu = True
 except ModuleNotFoundError:
     import numpy as cp
     from scipy.special import ndtr
+    onGpu = False
 from functools import wraps
 
 def counted_calls(f):
@@ -64,7 +66,6 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     # """
     # Set some verbose to track the behaviour of the fitting algorithm
     # """
-    # count = create_histogram_model.call_count # Count number of times a function is called
     count = create_histogram_model.count # Count number of times a function is called
     text_intput = (int(count), *params_to_fit)
     
@@ -204,7 +205,9 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     accum = accum / nloop
     if cp.all(cp.isnan(accum)):
         accum[:] = 0
-    accum = cp.asnumpy(accum)
+
+    if onGpu:
+        accum = cp.asnumpy(accum)
 
     return accum.ravel(), diag, diag_rv_1d, diag_rv_2d
 
@@ -347,73 +350,73 @@ def compute_data_histogram(data_null, bin_bounds, wl_scale, **kwargs):
 
 
 
-
-interpolate_kernel = cp.ElementwiseKernel(
-    'float32 x_new, raw float32 xp, int32 xp_size, raw float32 yp',
-    'raw float32 y_new',
-
-    '''
-    int high = xp_size - 1;
-    int low = 0;
-    int mid = 0;
-
-    while(high - low > 1)
-    {
-        mid = (high + low)/2;
-
-        if (xp[mid] <= x_new)
+if onGpu:
+    interpolate_kernel = cp.ElementwiseKernel(
+        'float32 x_new, raw float32 xp, int32 xp_size, raw float32 yp',
+        'raw float32 y_new',
+    
+        '''
+        int high = xp_size - 1;
+        int low = 0;
+        int mid = 0;
+    
+        while(high - low > 1)
         {
-            low = mid;
+            mid = (high + low)/2;
+    
+            if (xp[mid] <= x_new)
+            {
+                low = mid;
+            }
+            else
+            {
+                high = mid;
+            }
         }
-        else
+        y_new[i] = yp[low] + (x_new - xp[low])  * (yp[low+1] - yp[low]) / (xp[low+1] - xp[low]);
+    
+        if (x_new < xp[0])
         {
-            high = mid;
+             y_new[i] = yp[0];
         }
-    }
-    y_new[i] = yp[low] + (x_new - xp[low])  * (yp[low+1] - yp[low]) / (xp[low+1] - xp[low]);
-
-    if (x_new < xp[0])
-    {
-         y_new[i] = yp[0];
-    }
-    else if (x_new > xp[xp_size-1])
-    {
-         y_new[i] = yp[xp_size-1];
-    }
-
-    '''
-)
-
-computeCdfCuda = cp.ElementwiseKernel(
-    'float32 x_axis, raw float32 rv, float32 rv_sz',
-    'raw float32 cdf',
-    '''
-    int low = 0;
-    int high = rv_sz;
-    int mid = 0;
-
-    while(low < high){
-        mid = (low + high) / 2;
-        if(rv[mid] <= x_axis){
-            low = mid + 1;
+        else if (x_new > xp[xp_size-1])
+        {
+             y_new[i] = yp[xp_size-1];
         }
-        else{
-            high = mid;
+    
+        '''
+    )
+    
+    binarySearchCuda = cp.ElementwiseKernel(
+        'float32 x_axis, raw float32 rv, float32 rv_sz',
+        'raw float32 cdf',
+        '''
+        int low = 0;
+        int high = rv_sz;
+        int mid = 0;
+    
+        while(low < high){
+            mid = (low + high) / 2;
+            if(rv[mid] <= x_axis){
+                low = mid + 1;
+            }
+            else{
+                high = mid;
+            }
         }
-    }
-    cdf[i] = high;
-    '''
-)
+        cdf[i] = high;
+        '''
+    )
 
 
-def computeCdf(absc, data, mode, normed):
+def computeCdf(x_axis, data, mode, normed):
     """
     Compute the empirical cumulative density function (CDF) on GPU with CUDA.
 
     Parameters
     ----------
-    absc : cupy array
-        Abscissa of the CDF.
+    x_axis : cupy array
+        x-axis of the CDF.
     data : cupy array
         Data used to create the CDF.
     mode : string
@@ -429,13 +432,13 @@ def computeCdf(absc, data, mode, normed):
         CDF of ``data``.
 
     """
-    cdf = cp.zeros(absc.shape, dtype=cp.float32)
+    cdf = cp.zeros(x_axis.shape, dtype=cp.float32)
     data = cp.asarray(data, dtype=cp.float32)
-    absc = cp.asarray(absc, dtype=cp.float32)
+    absc = cp.asarray(x_axis, dtype=cp.float32)
 
     data = cp.sort(data)
 
-    computeCdfCuda(absc, data, data.size, cdf)
+    binarySearchCuda(absc, data, data.size, cdf)
 
     if mode == 'ccdf':
         cdf = data.size - cdf
@@ -445,39 +448,181 @@ def computeCdf(absc, data, mode, normed):
 
     return cdf
 
-
-def rv_generator_wPDF(bins_cent, pdf, nsamp):
+def _binarySearch(x, y):
     """
-    Random values generator based on the PDF.
+    Count values less than or equal to in another array.
+    The algorithm used is binary search.
+    
+    
+    https://www.enjoyalgorithms.com/blog/count-values-less-than-equal-to-in-another-array
 
     Parameters
     ----------
-    bins_cent : array
-        Centered bins of the PDF.
-    pdf : array
-        Normalized arbitrary PDF to use to generate rv.
-    nsamp : int
-        Number of values to generate.
+    x : 1d-array
+        "reference" array.
+    y : 1d-array
+        Array in which we want to count the number of elements lower or equal to the values in `x`.
+        MUST be sorted
 
     Returns
     -------
-    output_samples : array
-        Array of random values generated from the PDF.
+    high : int
+        Number of elements less than or equal to in another array.
 
     """
-    bin_width = bins_cent[1] - bins_cent[0]
-    cdf = cp.cumsum(pdf, dtype=cp.float32) * bin_width
-    cdf, mask = cp.unique(cdf, True)
+    low = 0
+    high = y.size
+    mid = 0
+    
+    while low < high:
+        mid = (low + high) // 2
+        if y[mid] <= x:
+            low = mid + 1
+        else:
+            high = mid
+            
+    return high
+    
+    
+def computeCdfCpu(data, axes=None, normed=True):
+    """
+    Get the CDF of measured quantities, on CPU.
 
-    cdf_bins_cent = bins_cent[mask]
-    cdf_bins_cent = cdf_bins_cent + bin_width/2.
+    Parameters
+    ----------
+    data : array
+        Data from which the CDF is wanted, the CDF is got from the 2nd axis.
+    axes : array-like, optional
+        x-axis of the CDFs to get. If `None`, the axes are deduced from the data. The default is None.
+    normed : bool, optional
+        If `True`, normalise the CDF by the number of elements along the 2nd axis of `data`. The default is True.
 
-    rv_uniform = cp.random.rand(nsamp, dtype=cp.float32)
-    output_samples = cp.zeros(rv_uniform.shape, dtype=cp.float32)
-    interpolate_kernel(rv_uniform, cdf, cdf.size,
-                       cdf_bins_cent, output_samples)
+    Returns
+    -------
+    cdfs : array
+        CDFs along the 2nd axis of `data`.
+    axes : array
+        x-axis of the CDFs, the arrays has the same shape as `cdfs`.
 
-    return output_samples
+    """
+
+    # First check if the data and the axies of the CDF are spectrally dispersed or not
+    if data.ndim == 1:
+        data = data.reshape((1, -1))
+        
+    data = np.sort(data)
+    
+    if axes is None:
+        sz = data.shape[0]
+        sizes = [len(np.linspace(data[i].min(), data[i].max(),
+                                     np.size(np.unique(data[i])),
+                                     endpoint=True))
+                     for i in range(sz)]
+        
+        axes = np.array([np.linspace(data[i].min(),
+                                          data[i].max(),
+                                          min(sizes), endpoint=True)
+                              for i in range(sz)], dtype=np.float32)
+    
+    # Calculate the CDF by iterating over the spectral channel
+    cdfs = []
+    for k in range(data.shape[0]):
+        elt = data[k]
+        xelt = axes[k]
+        cdf = []
+        for x in xelt:
+            index = _binarySearch(x, elt)
+            cdf.append(index)
+            
+        cdf = np.array(cdf)
+        
+        if normed:
+            cdf = cdf / elt.size
+            
+        cdfs.append(cdf)
+        
+    cdfs = np.array(cdfs, dtype=np.float32)
+    return cdfs, axes
+
+
+def get_cdf(data):
+    """
+    Get the CDF of measured quantities.
+    This function works on CPU and GPU.
+
+    Parameters
+    ----------
+    data : array
+        Data from which the CDF is wanted.
+    wl_scale0 : array
+        Wavelength axis.
+
+    Returns
+    -------
+    axes : 2d-array
+        axis of the CDF, first axis is the wavelength.
+    cdfs : 2d-array
+        CDF, first axis is the wavelength.
+
+    """
+    ndim0 = data.ndim 
+    if ndim0 == 1:
+        data = data.reshape((1,1))
+
+    sz = data.shape[0]
+    sizes = [len(np.linspace(data[i].min(), data[i].max(),
+                                 np.size(np.unique(data[i])),
+                                 endpoint=True))
+                 for i in range(sz)]
+
+    axes = cp.array([np.linspace(data[i].min(),
+                                      data[i].max(),
+                                      min(sizes), endpoint=True)
+                          for i in range(sz)],
+                         dtype=cp.float32)
+
+    if onGpu:
+        cdfs = cp.array([cp.asnumpy(computeCdf(axes[i], data[i],
+                                                   'cdf', True))
+                             for i in range(sz)],
+                            dtype=cp.float32)
+    else:
+        cdfs = computeCdfCpu(data, axes, True)[0]
+
+    if ndim0 == 1:
+        axes = axes[0]
+        cdfs = cdfs[0]
+
+    return axes, cdfs
+
+
+def get_dark_cdf(dk, wl_scale0):
+    """Get the CDF for generating RV from measured dark distributions.
+
+    :param dk: dark data
+    :type dk: array-like
+    :param wl_scale0: wavelength axis
+    :type wl_scale0: array
+    :return: axis of the CDF and the CDF
+    :rtype: 2-tuple
+    """
+    dark_size = [len(np.linspace(dk[i].min(), dk[i].max(),
+                                  np.size(np.unique(dk[i])),
+                                  endpoint=False))
+                  for i in range(len(wl_scale0))]
+
+    dark_axis = cp.array([np.linspace(dk[i].min(),
+                                      dk[i].max(),
+                                      min(dark_size), endpoint=False)
+                          for i in range(len(wl_scale0))],
+                          dtype=cp.float32)
+
+    dark_cdf = cp.array([cp.asnumpy(computeCdf(dark_axis[i], dk[i],
+                                                'cdf', True))
+                          for i in range(len(wl_scale0))],
+                        dtype=cp.float32)
+
+    return dark_axis, dark_cdf
 
 
 def rv_generator(absc, cdf, nsamp, rvu=None):
@@ -505,89 +650,21 @@ def rv_generator(absc, cdf, nsamp, rvu=None):
     cdf_absc = absc[mask]
 
     if rvu is None:
-        rv_uniform = cp.random.rand(nsamp, dtype=cp.float32)
+        try:
+            rv_uniform = cp.random.rand(nsamp, dtype=cp.float32)
+        except TypeError:
+            rv_uniform = cp.random.rand(nsamp)
+            rv_uniform = rv_uniform.astype(cp.float32)
     else:
         rv_uniform = cp.array(rvu, dtype=cp.float32)
-    output_samples = cp.zeros(rv_uniform.shape, dtype=cp.float32)
-    interpolate_kernel(rv_uniform, cdf, cdf.size, cdf_absc, output_samples)
+        
+    if onGpu:
+        output_samples = cp.zeros(rv_uniform.shape, dtype=cp.float32)
+        interpolate_kernel(rv_uniform, cdf, cdf.size, cdf_absc, output_samples)
+    else:
+        output_samples = np.interp(rv_uniform, cdf, cdf_absc, left=cdf_absc[0], right=cdf_absc[-1])
 
     return output_samples
-
-
-def computeCdfCpu(rv, x_axis, normed=True):
-    """
-    Compute the empirical cumulative density function (CDF) on CPU.
-
-    Parameters
-    ----------
-    rv : array
-        data used to compute the CDF.
-    x_axis : array
-        Abscissa of the CDF.
-    normed : bool, optional
-        If ``True``, the CDF is normed so that the maximum is\
-            equal to 1. The default is True.
-
-    Returns
-    -------
-    tuple
-        CDF of the **data**,  Indexes of cumulated values.
-
-    """
-    cdf = np.ones(x_axis.size)*rv.size
-    temp = np.sort(rv)
-    idx = 0
-    for i in range(x_axis.size):
-        #        idx = idx + len(np.where(temp[idx:] <= x_axis[i])[0])
-        mask = np.where(temp <= x_axis[i])[0]
-        idx = len(mask)
-
-        if len(temp[idx:]) != 0:
-            cdf[i] = idx
-        else:
-            print('pb', i, idx)
-            break
-
-    if normed:
-        cdf /= float(rv.size)
-        return cdf
-    else:
-        return cdf, mask
-
-
-def computeCdfCupy(rv, x_axis):
-    """
-    Compute the empirical cumulative density function (CDF) on GPU with cupy.
-
-    Parameters
-    ----------
-    rv : array
-        Data used to compute the CDF.
-    x_axis : array
-        Abscissa of the CDF.
-
-    Returns
-    -------
-    cdf : array
-        CDF of ``data``.
-
-    """
-    cdf = cp.ones(x_axis.size, dtype=cp.float32)*rv.size
-    temp = cp.asarray(rv, dtype=cp.float32)
-    temp = cp.sort(rv)
-    idx = 0
-    for i in range(x_axis.size):
-        idx = idx + len(cp.where(temp[idx:] <= x_axis[i])[0])
-
-        if len(temp[idx:]) != 0:
-            cdf[i] = idx
-        else:
-            break
-
-    cdf = cdf / rv.size
-
-    return cdf
-
 
 
 def getErrorNull(data_dic, dark_dic):
@@ -683,33 +760,6 @@ def getErrorPDF(data_null, data_null_err, null_axis):
     return cp.asnumpy(std)
 
 
-def doubleGaussCdf(x, mu1, mu2, sig1, sig2, A):
-    """
-    Calculate the CDF of the sum of two normal distributions.
-
-    Parameters
-    ----------
-    x : array
-        Abscissa of the CDF.
-    mu1 : float
-        Location parameter of the first normal distribution.
-    mu2 : float
-        Location parameter of the second normal distribution.
-    sig1 : float
-        Scale parameter of the first normal distribution.
-    sig2 : float
-        Scale parameter of the second normal distribution.
-    A : float
-        Relative amplitude of the second distribution with respect to the first one.
-
-    Returns
-    -------
-    array
-        CDF of the double normal distribution.
-
-    """
-    return sig1/(sig1+A*sig2) * ndtr((x-mu1)/(sig1)) + A*sig2/(sig1+A*sig2) * ndtr((x-mu2)/(sig2))
-
 
 def getErrorBinomNorm(pdf, data_size, normed):
     """
@@ -739,80 +789,5 @@ def getErrorBinomNorm(pdf, data_size, normed):
     return pdf_err
 
 
-def rv_gen_doubleGauss(nsamp, mu1, mu2, sig, A, target):
-    """
-    Random values generator according to a double normal distribution with\
-        the same scale factor.
 
-    Parameters
-    ----------
-    nsamp : int
-        Number of samples to generate.
-    mu1 : float
-        Location parameter of the first normal distribution.
-    mu2 : float
-        Location parameter of the second normal distribution.
-    sig : float
-        Scale parameter of the both normal distributions.
-    A : float
-        Relative amplitude of the second distribution with respect to\
-            the first one.
-    target : string
-        If ``target = cpu``, the random values are transferred\
-            from the graphic card memory to the RAM.
 
-    Returns
-    -------
-    rv : array or cupy array
-        Random values generated according to the double normal distribution.
-
-    """
-    x, step = cp.linspace(-2500, 2500, 10000, endpoint=False,
-                          retstep=True, dtype=cp.float32)
-    cdf = doubleGaussCdf(x, mu1, mu2, sig, A)
-    cdf = cp.asarray(cdf, dtype=cp.float32)
-    if target == 'cpu':
-        rv = cp.asnumpy(rv_generator(x, cdf, nsamp))
-    else:
-        rv = rv_generator(x, cdf, nsamp)
-        rv = cp.array(rv, dtype=cp.float32)
-    return rv
-
-def get_dark_cdf(dk, wl_scale0):
-    """
-    Get the CDF for generating RV from measured dark distributions.
-
-    Parameters
-    ----------
-    dk : array-like
-        Dark data.
-    wl_scale0 : array
-        Wavelength axis.
-
-    Returns
-    -------
-    dark_axis : 2d-array
-        axis of the CDF, first axis is the wavelength.
-    dark_cdf : 2d-array
-        CDF, first axis is the wavelength.
-
-    """
-    dark_size = [len(np.linspace(dk[i].min(), dk[i].max(),
-                                 np.size(np.unique(dk[i])),
-                                 endpoint=False))
-                 for i in range(len(wl_scale0))]
-
-    dark_axis = cp.array([np.linspace(dk[i].min(),
-                                      dk[i].max(),
-                                      min(dark_size), endpoint=False)
-                          for i in range(len(wl_scale0))],
-                         dtype=cp.float32)
-
-    dark_cdf = cp.array([cp.asnumpy(computeCdf(dark_axis[i], dk[i],
-                                               'cdf', True))
-                         for i in range(len(wl_scale0))],
-                        dtype=cp.float32)
-
-    return dark_axis, dark_cdf
-
-    
