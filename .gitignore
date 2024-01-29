@@ -412,3 +412,7 @@ doc/_build/html/build_model.html
 doc/_build/html/grip_nested_architecture.html
 
 tutorials/.ipynb_checkpoints/
+
+build/lib/grip/
+
+grip.egg-info/
