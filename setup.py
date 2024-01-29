@@ -13,8 +13,7 @@ setup(
 		'scipy>=1.11.4',
 		'matplotlib>=3.6.3',
 		'h5py>=3.8.0',
-		'emcee>=3.1.4',
-		'cupy>=11.5.0'
+		'emcee>=3.1.4'
     ],
 
 

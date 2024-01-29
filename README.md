@@ -30,8 +30,14 @@ Find the documentation [here](https://mamartinod.github.io/grip/).
 ## How-to
 1. Clone or download the repo.
 2. Open the folder then a terminal
-3. Use the command ``pip install .`` or ``conda install .``.
+3. Use the command ``pip install .``.
 4. Visit the documentation and its tutorial to discover more about the library.
+
+## Uninstall
+1. Open a terminal and the environment
+2. Do not locate yourself in the folder of the package or the parent
+3. Type `pip uninstall grip`
+4. Delete the folder `grip`
 
 # Acknowledgements
 GRIP is a development carried out in the context of the [SCIFY project](http://denis-defrere.com/scify.php). SCIFY has received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program (grant agreement No 8660).
