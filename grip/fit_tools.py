@@ -328,6 +328,7 @@ def mcmc(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs=
 
     """
 
+    params = np.array(params)
     ndim = params.size
     norm_params = params.copy()
     pos = norm_params + 1e-7 * np.random.randn(nwalkers, params.size)

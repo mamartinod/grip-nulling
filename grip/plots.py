@@ -103,8 +103,7 @@ def plot_null_distributions(nb_rows_plot, wl_scale, text, null_axis, null_pdf,\
                                   facecolor='white'), fontsize=17)
 
         if save_fig:
-            save_name2 = save_name + '_%s' % int(np.around(wl_scale[wl_idx[-1]]))
-            plt.savefig(save_path+save_name2+'.png', dpi=150)    
+            plt.savefig(save_path+save_name+'.png', dpi=150)    
     
     
 def plot_diag_spectral_data(nb_rows_plot, wl_scale, data_xy, labels, save_path, \
@@ -202,8 +201,7 @@ def plot_diag_spectral_data(nb_rows_plot, wl_scale, data_xy, labels, save_path, 
             count += 1
         plt.tight_layout()
         if save_fig:
-            save_name2 = save_name + '_%s' % int(np.around(wl_scale[wl_idx[-1]]))
-            plt.savefig(save_path+save_name2+'.png', dpi=150)  
+            plt.savefig(save_path+save_name+'.png', dpi=150)  
 
 def plot_diag_nonspectral_data(data_xy, labels, save_path, \
                     save_name, markers=['.', '-', '-'], save_fig=True):
@@ -269,7 +267,7 @@ def plot_diag_nonspectral_data(data_xy, labels, save_path, \
 def plot_parameter_space_2d(param_map, mapx, mapy, mapz, argz, stepx, stepy,
                          labelx, labely, labelz, text, save_path,
                          x_id, y_id, basin_hopping_count,
-                         wl_min, wl_max, save, valminmax=None, debug=False):
+                         wl_min, wl_max, save, valminmax=None):
     """
     Plot 3-parameter spaces with heatmaps.
     The 3rd axis is displayed along several subplots of the two other axes.
@@ -342,8 +340,6 @@ def plot_parameter_space_2d(param_map, mapx, mapy, mapz, argz, stepx, stepy,
     else:
         iteration = np.arange(mapz.size)
 
-    if debug:
-        print(mapx)
 
     for i, it in zip(iteration, range(10)):
         plt.subplot(5, 2, it+1)
