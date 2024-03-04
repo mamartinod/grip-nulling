@@ -11,6 +11,7 @@ import emcee
 from scipy.optimize import OptimizeWarning, minimize, least_squares
 from scipy.linalg import svd
 import warnings
+import numdifftools as nd
 
 def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, histo_err=None, **kwargs):
     """
@@ -60,19 +61,19 @@ def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins,
     steps = [np.linspace(param_bounds[k][0], param_bounds[k][1], param_sz[k], endpoint=False, retstep=True)[1] for k in range(len(param_bounds))]
     
     start = time()
-    chi2map = []
+    cost_map = []
     for param_values in product(*param_axes):
         parameters = np.array(param_values)
         out = create_histogram_model(parameters, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, **kwargs)[0]
         value = cost_fun(parameters, histo_data, create_histogram_model, histo_err, use_this_model=out)
-        chi2map.append(value)
+        cost_map.append(value)
         
-    chi2map = np.array(chi2map)
-    chi2map = chi2map.reshape(param_sz)
+    cost_map = np.array(cost_map)
+    cost_map = cost_map.reshape(param_sz)
     stop = time()
     print('Duration: %.3f s' % (stop-start))
     
-    return chi2map, param_axes, steps
+    return cost_map, param_axes, steps
 
 def ramanujan(n):
     """
@@ -98,6 +99,30 @@ def ramanujan(n):
     except:
         pass
     return rama
+
+def neg_log_lbti_lklh(params, data, func_model, *args, **kwargs):
+    if data.ndim == 2:
+        n_obs = np.sum(data, 1, keepdims=True)
+    else:
+        n_obs = data.sum()
+
+    if 'use_this_model' in kwargs.keys():
+        model = kwargs['use_this_model']
+    else:
+        if isinstance(args[-1], dict):
+            kwargs = args[-1]
+            args = list(args)
+            args = args[:-1]
+        model = func_model(params, *args, **kwargs)[0]
+        
+    if data.ndim == 2:
+        model = model.reshape((data.shape[0], -1))
+        
+    model = model / model.sum(1, keepdims=True) * n_obs
+        
+    lklh = -2 * np.sum(data * np.log((1 + model) / n_obs))
+    
+    return lklh
 
 def neg_log_multinomial(params, data, func_model, *args, **kwargs):
     """
@@ -139,6 +164,13 @@ def neg_log_multinomial(params, data, func_model, *args, **kwargs):
     if data.ndim == 2:
         model = model.reshape((data.shape[0], -1))
 
+    if data.ndim == 2:
+        n_obs = np.sum(data, 1, keepdims=True)
+    else:
+        n_obs = data.sum()
+
+    model = model / model.sum(1, keepdims=True) * n_obs
+
     logmodel = np.log(model)
     logsum = np.log(np.sum(model, 1, keepdims=True))
     logmodel -= logsum
@@ -149,9 +181,9 @@ def neg_log_multinomial(params, data, func_model, *args, **kwargs):
         mini = -15
     logmodel[np.isinf(logmodel)] = mini
     
-    lklh = np.sum(data * logmodel - fact_n_i)
+    lklh = -np.sum(data * logmodel - fact_n_i)
  
-    return -lklh
+    return lklh
         
         
 def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None, diff_step=None, func_args=(), func_kwargs={}):
@@ -172,8 +204,6 @@ def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None
         Dataset to fit (could be a histogram).
     yerr : array-like, optional
         uncertainties on the data. The default is None.
-    bounds : TYPE, optional
-        DESCRIPTION. The default is None.
     bounds : array-like, optional
         Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),...). The default is None.
     func_args : list-like, optional
@@ -204,13 +234,26 @@ def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None
         func_args = func_args + [func_kwargs]
     
     func_args = tuple(func_args)
+
+    # res = minimize(cost_func, p0, args=func_args, 
+    #                 method='L-BFGS-B', jac='3-point',
+    #                 bounds=bounds,
+    #                 options={'finite_diff_rel_step':diff_step})
+    # popt = res.x
+    # pcov = res.hess_inv.todense()
+
     res = minimize(cost_func, p0, args=func_args, 
-                   method='L-BFGS-B', jac='3-point',
-                   bounds=bounds,
-                   options={'finite_diff_rel_step':diff_step})
+                    method='powell',
+                    bounds=bounds)
     popt = res.x
-    pcov = res.hess_inv.todense()
     
+    if len(func_kwargs.keys()) > 0 and 'verbose' in func_kwargs.keys():
+        func_args[-1]['verbose'] = False
+    
+    hessian_matrix = nd.Hessian(cost_func, method='central')(popt, *func_args)
+    
+    pcov = np.linalg.inv(hessian_matrix)
+
     return popt, pcov, res
     
 def log_prior_uniform(params, bounds):
@@ -334,17 +377,19 @@ def mcmc(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs=
     pos = norm_params + 1e-7 * np.random.randn(nwalkers, params.size)
     
     posterior_func_args = (lklh_func, bounds, func_model, data, func_args, func_kwargs, neg_lklh)
-    
+    moves = [(emcee.moves.StretchMove(), 0.2), (emcee.moves.WalkMove(), 0.8)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=posterior_func_args)
     sampler.run_mcmc(pos, nstep, progress=progress_bar)
     samples = sampler.get_chain()
     flat_samples = sampler.get_chain(discard=min(nstep//10, 600), flat=True)
-    return samples, flat_samples
+    
+    # print("Autocorrelation time: %.2f steps"%(sampler.get_autocorr_time()))
+    return samples, flat_samples, sampler
 
 
 def calculate_chi2(params, data, func_model, *args, **kwargs):
     """
-    Calculate a reduced Chi squared. It can be used by an optimizer.
+    Calculate a Chi squared. It can be used by an optimizer.
     The Chi squared is calculated from the model function ``func_model`` or
     from a pre-calculated model (see Keywords).
 
@@ -366,7 +411,7 @@ def calculate_chi2(params, data, func_model, *args, **kwargs):
     Returns
     -------
     chi2 : float
-        Reduced chi squared.
+        chi squared.
 
     """
     if len(args) >= 1 and args[0] is not None:
@@ -383,29 +428,49 @@ def calculate_chi2(params, data, func_model, *args, **kwargs):
         model = model.ravel()
         
     chi2 = np.sum((data.ravel() - model)**2 / data_err.ravel()**2)
-    red = data.size - len(params)
-    chi2 = chi2 / red # Get a reduced chi2
     
     return chi2
+
+def wrap_residuals(func, ydata, transform):
+    """Calculate the residuals between data points and the model.
+    
+    Parameters
+    ----------
+    func : callable
+        function of the model.
+    ydata : array-like
+        Data to calculate the residuals with ``func``.
+    transform : None-type or array-like
+        Transform the residuals (e.g. weight by the uncertainties on ``ydata``).
+
+    Returns
+    -------
+    array-like
+        Residuals.
+
+    """
+    if transform is None:
+        def func_wrapped(params, *args, **kwargs):
+            out_func = func(params, *args, **kwargs)[0]
+            return out_func - ydata.ravel()
+    else:
+        def func_wrapped(params, *args, **kwargs):
+            out_func = func(params, *args, **kwargs)[0]
+            return transform.ravel() * (out_func - ydata.ravel())
+
+    return func_wrapped
 
 
 def lstsqrs_fit(func_model, p0, xdata, ydata, yerr=None, bounds=None,
              diff_step=None, x_scale=1, func_args=(), func_kwargs={}):
     """
-    Fit the function of the NSC.
+    Fit the data with the least squares algorithm and taking into account the boundaries.
+    
+    The function uses the `scipy.optimize.least_squares' function
+    (https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares).
 
-    Adaptation from the Scipy wrapper ``curve_fit``.
-    The Scipy wrapper ``curve_fit`` does not give all the outputs of the
-    least_squares function but gives the covariance matrix 
-    (not given by the latter function).
-    So I create a new wrapper giving both.
-    I just copy/paste the code source of the official wrapper
-    (https://github.com/scipy/scipy/blob/v1.5.4/scipy/optimize/minpack.py#L532-L834) 
-    and create new outputs for getting the information I need.
-    The algorithm is Trust-Reflective-Region.
-
-    For exact documentation of the arguments ``diff_step`` and ``x_scale``,
-    see https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares.
+    The cost function uses the "huber" transformation hence the cost value is not a chi squared.
+    The boundaries are handled according to the Trust-Reflective-Region.
 
     Parameters
     ----------
@@ -452,9 +517,14 @@ def lstsqrs_fit(func_model, p0, xdata, ydata, yerr=None, bounds=None,
 
     p0 = np.atleast_1d(p0)
 
-    cost_func = calculate_chi2
+
+    # cost_func = calculate_chi2
+    # func_args = list(func_args)
+    # func_args = [ydata, func_model, yerr, xdata] + func_args
+
     func_args = list(func_args)
-    func_args = [ydata, func_model, yerr, xdata] + func_args
+    func_args = [xdata] + func_args
+    cost_func = wrap_residuals(func_model, ydata, 1./yerr)
 
     jac = '3-point'
     res = least_squares(cost_func, p0, jac=jac, bounds=bounds, method='trf',
