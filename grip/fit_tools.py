@@ -378,7 +378,8 @@ def mcmc(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs=
     
     posterior_func_args = (lklh_func, bounds, func_model, data, func_args, func_kwargs, neg_lklh)
     moves = [(emcee.moves.StretchMove(), 0.2), (emcee.moves.WalkMove(), 0.8)]
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=posterior_func_args)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=posterior_func_args,
+                                    moves=moves)
     sampler.run_mcmc(pos, nstep, progress=progress_bar)
     samples = sampler.get_chain()
     flat_samples = sampler.get_chain(discard=min(nstep//10, 600), flat=True)
