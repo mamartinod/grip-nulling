@@ -408,8 +408,37 @@ if onGpu:
         '''
     )
 
-
 def computeCdf(x_axis, data, mode, normed):
+    """
+    Compute the empirical cumulative density function (CDF).
+    It is a wrapper which calls the GPU or CPU version depending on the presence
+    of cupy and a GPU.
+
+    Parameters
+    ----------
+    x_axis : cupy array
+        x-axis of the CDF.
+    data : cupy array
+        Data used to create the CDF.
+    mode : string
+        If ``ccdf``, the survival function (complementary of the CDF)\
+            is calculated instead.
+    normed : bool
+        If ``True``, the CDF is normed so that the maximum is\
+            equal to 1.
+
+    Returns
+    -------
+    cdf : cupy array
+        CDF of ``data``.
+
+    """    
+    if onGpu:
+        return computeCdfGPU(x_axis, data, mode, normed)
+    else:
+        return computeCdfCpu(x_axis, data, mode, normed)
+
+def computeCdfGPU(x_axis, data, mode, normed):
     """
     Compute the empirical cumulative density function (CDF) on GPU with CUDA.
 
@@ -484,25 +513,27 @@ def _binarySearch(x, y):
     return high
     
     
-def computeCdfCpu(data, axes=None, normed=True):
+def computeCdfCpu(x_axis, data, mode, normed):
     """
-    Get the CDF of measured quantities, on CPU.
+    Compute the empirical cumulative density function (CDF) on CPU.
 
     Parameters
     ----------
-    data : array
-        Data from which the CDF is wanted, the CDF is got from the 2nd axis.
-    axes : array-like, optional
-        x-axis of the CDFs to get. If `None`, the axes are deduced from the data. The default is None.
-    normed : bool, optional
-        If `True`, normalise the CDF by the number of elements along the 2nd axis of `data`. The default is True.
+    x_axis : cupy array
+        x-axis of the CDF.
+    data : cupy array
+        Data used to create the CDF.
+    mode : string
+        If ``ccdf``, the survival function (complementary of the CDF)\
+            is calculated instead.
+    normed : bool
+        If ``True``, the CDF is normed so that the maximum is\
+            equal to 1.
 
     Returns
     -------
-    cdfs : array
-        CDFs along the 2nd axis of `data`.
-    axes : array
-        x-axis of the CDFs, the arrays has the same shape as `cdfs`.
+    cdf : cupy array
+        CDF of ``data``.
 
     """
 
@@ -512,29 +543,20 @@ def computeCdfCpu(data, axes=None, normed=True):
         
     data = np.sort(data)
     
-    if axes is None:
-        sz = data.shape[0]
-        sizes = [len(np.linspace(data[i].min(), data[i].max(),
-                                     np.size(np.unique(data[i])),
-                                     endpoint=True))
-                     for i in range(sz)]
-        
-        axes = np.array([np.linspace(data[i].min(),
-                                          data[i].max(),
-                                          min(sizes), endpoint=True)
-                              for i in range(sz)], dtype=np.float32)
-    
     # Calculate the CDF by iterating over the spectral channel
     cdfs = []
     for k in range(data.shape[0]):
         elt = data[k]
-        xelt = axes[k]
+        xelt = x_axis[k]
         cdf = []
         for x in xelt:
             index = _binarySearch(x, elt)
             cdf.append(index)
             
         cdf = np.array(cdf)
+
+        if mode == 'ccdf':
+            cdf = data.size - cdf
         
         if normed:
             cdf = cdf / elt.size
@@ -542,7 +564,7 @@ def computeCdfCpu(data, axes=None, normed=True):
         cdfs.append(cdf)
         
     cdfs = np.array(cdfs, dtype=np.float32)
-    return cdfs, axes
+    return cdfs
 
 
 def get_cdf(data):
