@@ -96,15 +96,10 @@ def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias,
 
     Compute the null depth from generated random values of photometries, detector noise and OPD. 
     The estimator is the ratio of the null over the antinull fluxes.
-
-
-
     """
     visibility = (1 - na) / (1 + na)
     wave_number = 1./wavelength
     cosine = cp.cos(2 * np.pi * wave_number * opd + phase_bias)
-    # delta_wave_number = abs(
-    #     1/(wavelength + spec_chan_width/2) - 1/(wavelength - spec_chan_width/2))
     delta_wave_number = spec_chan_width / wavelength**2
     arg = np.pi*delta_wave_number * opd
     sinc = cp.sin(arg) / arg
