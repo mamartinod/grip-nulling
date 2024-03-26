@@ -124,7 +124,58 @@ def neg_log_lbti_lklh(params, data, func_model, *args, **kwargs):
     
     return lklh
 
-def neg_log_multinomial(params, data, func_model, *args, **kwargs):
+def log_chi2(params, data, func_model, *args, **kwargs):
+    """
+    Log likelihood of a Normally distributed data. For a model fitting context, 
+    this function is maximised with the optimal parameters.
+    It does not directly reflect the reduced $\chi^2$, one first needs to multiply 
+    by two then divide by the number of degrees of freedom and take the opposite sign.
+
+    Parameters
+    ----------
+    params : array
+        Guess of the parameters.
+    data : nd-array
+        Data to fit.
+    func_model : callable function
+        Model used to fit the data (e.g. model of the histogram).
+    *args : list-like
+        Extra-arguments which are in this order: the uncertainties (same shape as ``data``),\
+            x-axis, arguments of ``func_model``.
+    **kwargs : keywords
+        Accepted keywords are: ``use_this_model`` to use a predefined model of the data;\
+            keywords to pass to ``func_model``.
+
+    Returns
+    -------
+    chi2 : float
+        half chi squared.
+
+    """    
+    if len(args) >= 1 and args[0] is not None:
+        data_err = args[0]
+    else:
+        data_err = np.ones_like(data)
+        
+    if 'use_this_model' in kwargs.keys():
+        model = kwargs['use_this_model']
+    else:
+        if isinstance(args[-1], dict):
+            kwargs = args[-1]
+            args = list(args)
+            args = args[:-1]        
+        model = func_model(params, *args[1:], **kwargs)[0]
+        model = model.reshape((data.shape[0], -1))
+        model = model / model.sum(1)[:,None] * data.sum(1)[:, None]
+        model = model.ravel()
+
+    chi2 = np.sum((data.ravel() - model)**2 / data_err.ravel()**2)
+    chi2 = -0.5 * chi2
+    
+    return chi2
+
+
+def log_multinomial(params, data, func_model, *args, **kwargs):
     """
     Likelihood of a dataset following multinomial distribution (e.g. number of occurences in the bins of a histogram)
 
@@ -147,44 +198,49 @@ def neg_log_multinomial(params, data, func_model, *args, **kwargs):
     Returns
     -------
     float
-        negative log of the likelihood. The negative is picked for minimize algorithm to work.
+        log of the likelihood. The negative is picked for minimize algorithm to work.
 
     """
     fact_n_i = ramanujan(data)
     
     if 'use_this_model' in kwargs.keys():
         model = kwargs['use_this_model']
+
+        if data.ndim == 2:
+            model = model.reshape((data.shape[0], -1))
+    
+        if data.ndim == 2:
+            n_obs = np.sum(data, 1, keepdims=True)
+        else:
+            n_obs = data.sum()
+    
+        model = model / model.sum(1, keepdims=True) * n_obs
     else:
         if isinstance(args[-1], dict):
             kwargs = args[-1]
             args = list(args)
             args = args[:-1]
         model = func_model(params, *args, **kwargs)[0]
-        
-    if data.ndim == 2:
+
         model = model.reshape((data.shape[0], -1))
+        model = model / model.sum(1)[:,None] * data.sum(1)[:, None]
+    
 
-    if data.ndim == 2:
-        n_obs = np.sum(data, 1, keepdims=True)
-    else:
-        n_obs = data.sum()
-
-    model = model / model.sum(1, keepdims=True) * n_obs
 
     logmodel = np.log(model)
     logsum = np.log(np.sum(model, 1, keepdims=True))
     logmodel -= logsum
     
     try:
-        mini = np.min(logmodel[~np.isinf(logmodel)])
+        mini = np.nanmin(logmodel[~np.isinf(logmodel)])
     except:
         mini = -15
     logmodel[np.isinf(logmodel)] = mini
-    
-    lklh = -np.sum(data * logmodel - fact_n_i)
- 
-    return lklh
         
+    lklh = np.sum(data * logmodel - fact_n_i)
+
+    return lklh
+
         
 def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None, diff_step=None, func_args=(), func_kwargs={}):
     """
@@ -283,7 +339,54 @@ def log_prior_uniform(params, bounds):
         return -np.inf
 
 
-def log_posterior(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs={}, neg_lklh=True):
+# def log_posterior(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs={}, neg_lklh=True):
+#     """
+#     Posterior of the data.
+
+#     Parameters
+#     ----------
+#     params : list-like
+#         List of parameters.
+#     lklh_func : function
+#         Likelihood function to use.
+#     bounds : array-like
+#         Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),...).
+#     func_model : function
+#         Function of the model which reproduces the data to fig (e.g. histogram).
+#     data : array of size (N,) or (nb wl, N)
+#         Data to fit.
+#     func_args : list-like, optional
+#         Arguments to pass to ``func_model``. The default is ().
+#     func_kwargs : dic-like, optional
+#         Keywords to pass to ``func_model``. The default is {}.
+#     neg_lklh : bool, optional
+#         Change the sign of the value of the likelihood. 
+#         If ``True``, it means the returned likelihood by ``lklh_func`` is negative thus it signs must be reverted.
+#         The default is True.
+
+#     Returns
+#     -------
+#     log_posterior : float
+#         value of the posterior.
+
+#     """
+
+#     log_pr = log_prior_uniform(params, bounds)
+#     log_lklh = lklh_func(params, data, func_model, *func_args, **func_kwargs)
+    
+#     if not neg_lklh:
+#         sign = 1.
+#     else:
+#         sign = -1.
+        
+#     log_posterior = log_pr + sign * log_lklh
+    
+#     if not np.isnan(log_posterior):
+#         return log_posterior
+#     else:
+#         return -np.inf
+
+def log_posterior(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs={}):
     """
     Posterior of the data.
 
@@ -317,20 +420,14 @@ def log_posterior(params, lklh_func, bounds, func_model, data, func_args=(), fun
 
     log_pr = log_prior_uniform(params, bounds)
     log_lklh = lklh_func(params, data, func_model, *func_args, **func_kwargs)
-    
-    if not neg_lklh:
-        sign = 1.
-    else:
-        sign = -1.
         
-    log_posterior = log_pr + sign * log_lklh
+    log_posterior = log_pr + log_lklh
     
     if not np.isnan(log_posterior):
-        return log_posterior
+        return log_posterior, log_pr
     else:
-        return -np.inf
-
-
+        return -np.inf, log_pr
+    
 def mcmc(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs={}, 
              neg_lklh=True, nwalkers=6, nstep=2000, progress_bar=True):
     """
@@ -376,20 +473,27 @@ def mcmc(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs=
     norm_params = params.copy()
     pos = norm_params + 1e-7 * np.random.randn(nwalkers, params.size)
     
-    posterior_func_args = (lklh_func, bounds, func_model, data, func_args, func_kwargs, neg_lklh)
+    posterior_func_args = (lklh_func, bounds, func_model, data, func_args, func_kwargs)
     moves = [(emcee.moves.StretchMove(), 0.2), (emcee.moves.WalkMove(), 0.8)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=posterior_func_args,
                                     moves=moves)
-    sampler.run_mcmc(pos, nstep, progress=progress_bar)
+    sampler.run_mcmc(pos, nstep, progress=progress_bar, tune=True)
     samples = sampler.get_chain()
     flat_samples = sampler.get_chain(discard=min(nstep//10, 600), flat=True)
     
-    # print("Autocorrelation time: %.2f steps"%(sampler.get_autocorr_time()))
-    return samples, flat_samples, sampler
+    log_prob_samples = sampler.get_log_prob(discard=min(nstep//10, 600), flat=True)
+    log_prior_samples = sampler.get_blobs(discard=min(nstep//10, 600), flat=True)    
+    
+    all_samples = np.concatenate(
+        (flat_samples, log_prob_samples[:, None], log_prior_samples[:, None]), axis=1
+    )
+
+    return samples, flat_samples, sampler, all_samples
 
 
 def calculate_chi2(params, data, func_model, *args, **kwargs):
     """
+    DEPRECATED
     Calculate a Chi squared. It can be used by an optimizer.
     The Chi squared is calculated from the model function ``func_model`` or
     from a pre-calculated model (see Keywords).
@@ -429,8 +533,9 @@ def calculate_chi2(params, data, func_model, *args, **kwargs):
         model = model.ravel()
         
     chi2 = np.sum((data.ravel() - model)**2 / data_err.ravel()**2)
-    
-    return chi2
+    chi2 = chi2 / (data.size - len(params))
+    return -chi2
+
 
 def wrap_residuals(func, ydata, transform):
     """Calculate the residuals between data points and the model.
@@ -518,17 +623,12 @@ def lstsqrs_fit(func_model, p0, xdata, ydata, yerr=None, bounds=None,
 
     p0 = np.atleast_1d(p0)
 
-
-    # cost_func = calculate_chi2
-    # func_args = list(func_args)
-    # func_args = [ydata, func_model, yerr, xdata] + func_args
-
     func_args = list(func_args)
     func_args = [xdata] + func_args
-    cost_func = wrap_residuals(func_model, ydata, 1./yerr)
+    residuals = wrap_residuals(func_model, ydata, 1./yerr)
 
     jac = '3-point'
-    res = least_squares(cost_func, p0, jac=jac, bounds=bounds, method='trf',
+    res = least_squares(residuals, p0, jac=jac, bounds=bounds, method='dogbox',
                         diff_step=diff_step, x_scale=x_scale, loss='huber',
                         verbose=2, args=func_args, kwargs=func_kwargs)
     popt = res.x
