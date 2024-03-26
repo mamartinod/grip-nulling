@@ -257,3 +257,52 @@ def check_init_guess(guess, l_bound, u_bound):
     check = np.any(guess <= np.array(u_bound)[:, 0]) or np.any(
         guess >= np.array(l_bound)[:, 1])
     return check
+
+def return_neg_func(func):
+    """
+    Return a callable which is the negative of a function: `f(x) -> -f(x)`
+    It can be used to create a callable cost function one wants to minimize (e.g. $\chi^2$ estimator).
+
+    Parameters
+    ----------
+    func : callable
+        function to return the negative version.
+
+    Returns
+    -------
+    callable
+        negative version of the function.
+
+    """
+    def wrapper(*args, **kwargs):
+        return -func(*args, **kwargs)
+    return wrapper
+
+def tempering(func, tempering_factor):
+    """
+    Scale a function by a constant.
+    It performs *tempering* in MCMC, i.e. to smoothen/sharpen the log-likelihood function.
+    Indeed, if the log-likelihood decrease by 1 unit, it means the event is 2.7x less likely to happen.
+    Some log-likelihood functions needs to be tempered before being explored by MCMC algorithm.
+    
+    Note: the posterior is widen/shrinked by the square root of the tempering factor $\frac{1}{\sqrt{tempering_factor}}$.
+    
+    Example:
+        >>> tempering(log_chi2, -2 / ddof) # Returns a reduced chi2 cost function
+
+    Parameters
+    ----------
+    func : callable
+        Function to rescale.
+    tempering_factor : float
+        Scale factor.
+
+    Returns
+    -------
+    callable
+        Rescaled function.
+
+    """
+    def tempered_func(*args, **kwargs):
+        return func(*args, **kwargs) * tempering_factor
+    return tempered_func
