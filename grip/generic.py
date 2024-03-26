@@ -21,10 +21,10 @@ def get_zeta_coeff(path, wl_scale, plot=False, **kwargs):
     wl_scale : array
         List of wavelength for which we want the zeta coefficients.
     plot : bool, optional
-        If ``True``, the plot of the interpolated zeta coefficients\
+        If `True`, the plot of the interpolated zeta coefficients\
             curve is displayed. The default is False.
     **kwargs : extra keyword arguments
-        ``wl_bounds`` prunes the zeta coeff arrays for them to all have\
+        `wl_bounds` prunes the zeta coeff arrays for them to all have\
         the same wavelength scale.
 
     Returns
@@ -140,7 +140,7 @@ class Logger(object):
     Class allowing to save the content of the console inside a txt file.
     Found on the internet, source lost.
     
-    To stop the log in the file, use the command ``sys.stdout.close()''.
+    To stop the log in the file, use the command `sys.stdout.close()`.
     """
 
     def __init__(self, log_path):
@@ -260,7 +260,8 @@ def check_init_guess(guess, l_bound, u_bound):
 
 def return_neg_func(func):
     """
-    Return a callable which is the negative of a function: `f(x) -> -f(x)`
+    Return a callable which is the negative of a function: `f(x) -> -f(x)`.
+    
     It can be used to create a callable cost function one wants to minimize (e.g. $\chi^2$ estimator).
 
     Parameters
@@ -285,11 +286,8 @@ def tempering(func, tempering_factor):
     Indeed, if the log-likelihood decrease by 1 unit, it means the event is 2.7x less likely to happen.
     Some log-likelihood functions needs to be tempered before being explored by MCMC algorithm.
     
-    Note: the posterior is widen/shrinked by the square root of the tempering factor $\frac{1}{\sqrt{tempering_factor}}$.
+    Note: the posterior is widen/shrinked by the square root of the tempering factor $1 / \sqrt{tempering~factor}$.
     
-    Example:
-        >>> tempering(log_chi2, -2 / ddof) # Returns a reduced chi2 cost function
-
     Parameters
     ----------
     func : callable
@@ -301,6 +299,8 @@ def tempering(func, tempering_factor):
     -------
     callable
         Rescaled function.
+
+    >>> tempering(log_chi2, -2 / ddof) # Returns a reduced chi2 cost function
 
     """
     def tempered_func(*args, **kwargs):
