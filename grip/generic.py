@@ -262,7 +262,7 @@ def return_neg_func(func):
     """
     Return a callable which is the negative of a function: `f(x) -> -f(x)`.
     
-    It can be used to create a callable cost function one wants to minimize (e.g. $\chi^2$ estimator).
+    It can be used to create a callable cost function one wants to minimize (e.g. :math:`\chi^2` estimator).
 
     Parameters
     ----------
@@ -286,8 +286,8 @@ def tempering(func, tempering_factor):
     Indeed, if the log-likelihood decrease by 1 unit, it means the event is 2.7x less likely to happen.
     Some log-likelihood functions needs to be tempered before being explored by MCMC algorithm.
     
-    Note: the posterior is widen/shrinked by the square root of the tempering factor $1 / \sqrt{tempering~factor}$.
-    
+    Note: the posterior is widen/shrinked by the square root of the tempering factor :math:`1 / \sqrt{tempering~factor}`.
+        
     Parameters
     ----------
     func : callable

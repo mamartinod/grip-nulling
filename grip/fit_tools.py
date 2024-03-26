@@ -128,7 +128,7 @@ def log_chi2(params, data, func_model, *args, **kwargs):
     """
     Log likelihood of a Normally distributed data. For a model fitting context, 
     this function is maximised with the optimal parameters.
-    It does not directly reflect the reduced $\chi^2$, one first needs to multiply 
+    It does not directly reflect the reduced :math:`\chi^2`, one first needs to multiply 
     by two then divide by the number of degrees of freedom and take the opposite sign.
 
     Parameters
@@ -491,50 +491,50 @@ def mcmc(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs=
     return samples, flat_samples, sampler, all_samples
 
 
-def calculate_chi2(params, data, func_model, *args, **kwargs):
-    """
-    DEPRECATED
-    Calculate a Chi squared. It can be used by an optimizer.
-    The Chi squared is calculated from the model function ``func_model`` or
-    from a pre-calculated model (see Keywords).
+# def calculate_chi2(params, data, func_model, *args, **kwargs):
+#     """
+#     DEPRECATED
+#     Calculate a Chi squared. It can be used by an optimizer.
+#     The Chi squared is calculated from the model function ``func_model`` or
+#     from a pre-calculated model (see Keywords).
 
-    Parameters
-    ----------
-    params : array
-        Guess of the parameters.
-    data : nd-array
-        Data to fit.
-    func_model : callable function
-        Model used to fit the data (e.g. model of the histogram).
-    *args : list-like
-        Extra-arguments which are in this order: the uncertainties (same shape as ``data``),\
-            x-axis, arguments of ``func_model``.
-    **kwargs : keywords
-        Accepted keywords are: ``use_this_model`` to use a predefined model of the data;\
-            keywords to pass to ``func_model``.
+#     Parameters
+#     ----------
+#     params : array
+#         Guess of the parameters.
+#     data : nd-array
+#         Data to fit.
+#     func_model : callable function
+#         Model used to fit the data (e.g. model of the histogram).
+#     *args : list-like
+#         Extra-arguments which are in this order: the uncertainties (same shape as ``data``),\
+#             x-axis, arguments of ``func_model``.
+#     **kwargs : keywords
+#         Accepted keywords are: ``use_this_model`` to use a predefined model of the data;\
+#             keywords to pass to ``func_model``.
 
-    Returns
-    -------
-    chi2 : float
-        chi squared.
+#     Returns
+#     -------
+#     chi2 : float
+#         chi squared.
 
-    """
-    if len(args) >= 1 and args[0] is not None:
-        data_err = args[0]
-    else:
-        data_err = np.ones_like(data)
+#     """
+#     if len(args) >= 1 and args[0] is not None:
+#         data_err = args[0]
+#     else:
+#         data_err = np.ones_like(data)
         
-    if 'use_this_model' in kwargs.keys():
-        model = kwargs['use_this_model']
-    else:
-        model = func_model(params, *args[1:], **kwargs)[0]
-        model = model.reshape((data.shape[0], -1))
-        model = model / model.sum(1)[:,None] * data.sum(1)[:, None]
-        model = model.ravel()
+#     if 'use_this_model' in kwargs.keys():
+#         model = kwargs['use_this_model']
+#     else:
+#         model = func_model(params, *args[1:], **kwargs)[0]
+#         model = model.reshape((data.shape[0], -1))
+#         model = model / model.sum(1)[:,None] * data.sum(1)[:, None]
+#         model = model.ravel()
         
-    chi2 = np.sum((data.ravel() - model)**2 / data_err.ravel()**2)
-    chi2 = chi2 / (data.size - len(params))
-    return -chi2
+#     chi2 = np.sum((data.ravel() - model)**2 / data_err.ravel()**2)
+#     chi2 = chi2 / (data.size - len(params))
+#     return -chi2
 
 
 def wrap_residuals(func, ydata, transform):
@@ -572,7 +572,7 @@ def lstsqrs_fit(func_model, p0, xdata, ydata, yerr=None, bounds=None,
     """
     Fit the data with the least squares algorithm and taking into account the boundaries.
     
-    The function uses the `scipy.optimize.least_squares' function
+    The function uses the `scipy.optimize.least_squares` function
     (https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares).
 
     The cost function uses the "huber" transformation hence the cost value is not a chi squared.

@@ -20,7 +20,7 @@ release = '1'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx_rtd_theme', 'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx_math_dollar']
+extensions = ['sphinx_rtd_theme', 'sphinx.ext.autodoc', 'sphinx.ext.mathjax']
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
@@ -54,18 +54,4 @@ autodoc_mock_imports = [
 'functools',
 'numdifftools'
 ]
-
-mathjax_config = {
-    'tex2jax': {
-        'inlineMath': [ ["\\(","\\)"] ],
-        'displayMath': [["\\[","\\]"] ],
-    },
-}
-
-mathjax3_config = {
-  "tex": {
-    "inlineMath": [['\\(', '\\)']],
-    "displayMath": [["\\[", "\\]"]],
-  }
-}
 
