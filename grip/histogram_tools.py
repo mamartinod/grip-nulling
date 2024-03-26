@@ -309,14 +309,16 @@ def compute_data_histogram(data_null, bin_bounds, wl_scale, **kwargs):
 
     """
 
-    # sz = int(1e+6)  # size of the sample of measured null depth.
-    sz_list = np.array([np.size(d[(d >= bin_bounds[0]) &
-                                  (d <= bin_bounds[1])])
-                        for d in data_null])
-    sz = np.max(sz_list)  # size of the sample of measured null depth.
+    if 'nb_bins' in kwargs.keys():
+        sz = kwargs['nb_bins'] + 1
+    else:
+        sz_list = np.array([np.size(d[(d >= bin_bounds[0]) &
+                                      (d <= bin_bounds[1])])
+                            for d in data_null])
+        sz = np.max(sz_list)  # size of the sample of measured null depth
+        sz = int(sz**0.5+1)
 
-    null_axis = np.array([np.linspace(bin_bounds[0], bin_bounds[1], int(
-        sz**0.5+1), retstep=False, dtype=np.float32)
+    null_axis = np.array([np.linspace(bin_bounds[0], bin_bounds[1], sz, retstep=False, dtype=np.float32)
         for i in range(data_null.shape[0])])
 
     #########
@@ -432,7 +434,7 @@ def computeCdf(x_axis, data, mode, normed):
     cdf : cupy array
         CDF of ``data``.
 
-    """    
+    """
     if onGpu:
         return computeCdfGPU(x_axis, data, mode, normed)
     else:
@@ -477,7 +479,7 @@ def computeCdfGPU(x_axis, data, mode, normed):
 
     return cdf
 
-def _binarySearch(x, y):
+def binarySearchCpu(x, y):
     """
     Count values less than or equal to in another array.
     The algorithm used is binary search.
@@ -513,6 +515,59 @@ def _binarySearch(x, y):
     return high
     
     
+# def computeCdfCpu(x_axis, data, mode, normed):
+#     """
+#     Compute the empirical cumulative density function (CDF) on CPU.
+
+#     Parameters
+#     ----------
+#     x_axis : cupy array
+#         x-axis of the CDF.
+#     data : cupy array
+#         Data used to create the CDF.
+#     mode : string
+#         If ``ccdf``, the survival function (complementary of the CDF)\
+#             is calculated instead.
+#     normed : bool
+#         If ``True``, the CDF is normed so that the maximum is\
+#             equal to 1.
+
+#     Returns
+#     -------
+#     cdf : cupy array
+#         CDF of ``data``.
+
+#     """
+
+#     # First check if the data and the axies of the CDF are spectrally dispersed or not
+#     if data.ndim == 1:
+#         data = data.reshape((1, -1))
+        
+#     data = np.sort(data)
+    
+#     # Calculate the CDF by iterating over the spectral channel
+#     cdfs = []
+#     for k in range(data.shape[0]):
+#         elt = data[k]
+#         xelt = x_axis[k]
+#         cdf = []
+#         for x in xelt:
+#             index = binarySearchCpu(x, elt)
+#             cdf.append(index)
+            
+#         cdf = np.array(cdf)
+
+#         if mode == 'ccdf':
+#             cdf = data.size - cdf
+        
+#         if normed:
+#             cdf = cdf / elt.size
+            
+#         cdfs.append(cdf)
+        
+#     cdfs = np.array(cdfs, dtype=np.float32)
+#     return cdfs
+
 def computeCdfCpu(x_axis, data, mode, normed):
     """
     Compute the empirical cumulative density function (CDF) on CPU.
@@ -521,7 +576,7 @@ def computeCdfCpu(x_axis, data, mode, normed):
     ----------
     x_axis : cupy array
         x-axis of the CDF.
-    data : cupy array
+    data : array
         Data used to create the CDF.
     mode : string
         If ``ccdf``, the survival function (complementary of the CDF)\
@@ -536,35 +591,24 @@ def computeCdfCpu(x_axis, data, mode, normed):
         CDF of ``data``.
 
     """
-
-    # First check if the data and the axies of the CDF are spectrally dispersed or not
-    if data.ndim == 1:
-        data = data.reshape((1, -1))
         
     data = np.sort(data)
     
-    # Calculate the CDF by iterating over the spectral channel
-    cdfs = []
-    for k in range(data.shape[0]):
-        elt = data[k]
-        xelt = x_axis[k]
-        cdf = []
-        for x in xelt:
-            index = _binarySearch(x, elt)
-            cdf.append(index)
-            
-        cdf = np.array(cdf)
+    cdf = []
+    for x in x_axis:
+        index = binarySearchCpu(x, data)
+        cdf.append(index)
+        
+    cdf = np.array(cdf)
 
-        if mode == 'ccdf':
-            cdf = data.size - cdf
-        
-        if normed:
-            cdf = cdf / elt.size
-            
-        cdfs.append(cdf)
-        
-    cdfs = np.array(cdfs, dtype=np.float32)
-    return cdfs
+    if mode == 'ccdf':
+        cdf = data.size - cdf
+    
+    if normed:
+        cdf = cdf / data.size
+                
+    cdf = np.array(cdf, dtype=np.float32)
+    return cdf
 
 
 def get_cdf(data):
@@ -603,13 +647,9 @@ def get_cdf(data):
                           for i in range(sz)],
                          dtype=cp.float32)
 
-    if onGpu:
-        cdfs = cp.array([cp.asnumpy(computeCdf(axes[i], data[i],
-                                                   'cdf', True))
-                             for i in range(sz)],
-                            dtype=cp.float32)
-    else:
-        cdfs = computeCdfCpu(data, axes, True)[0]
+    cdfs = cp.array([computeCdf(axes[i], data[i], 'cdf', True) 
+                     for i in range(sz)], dtype=cp.float32)
+
 
     if ndim0 == 1:
         axes = axes[0]
