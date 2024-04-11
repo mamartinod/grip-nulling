@@ -348,7 +348,7 @@ def compute_data_histogram(data_null, bin_bounds, wl_scale, **kwargs):
     null_pdf = np.array(null_pdf)
     null_pdf_err = np.array(null_pdf_err)
     
-    return null_axis, null_pdf, null_pdf_err, int(sz**0.5+1)
+    return null_axis, null_pdf, null_pdf_err, sz
 
 
 
