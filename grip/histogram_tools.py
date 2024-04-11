@@ -633,7 +633,7 @@ def get_cdf(data):
     """
     ndim0 = data.ndim 
     if ndim0 == 1:
-        data = data.reshape((1,1))
+        data = data.reshape((1, -1))
 
     sz = data.shape[0]
     sizes = [len(np.linspace(data[i].min(), data[i].max(),

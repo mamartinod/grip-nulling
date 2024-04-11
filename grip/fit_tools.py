@@ -10,8 +10,9 @@ from itertools import product
 import emcee
 from scipy.optimize import OptimizeWarning, minimize, least_squares
 from scipy.linalg import svd
-import warnings
 import numdifftools as nd
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning) 
 
 def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, histo_err=None, **kwargs):
     """
@@ -491,50 +492,50 @@ def mcmc(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs=
     return samples, flat_samples, sampler, all_samples
 
 
-# def calculate_chi2(params, data, func_model, *args, **kwargs):
-#     """
-#     DEPRECATED
-#     Calculate a Chi squared. It can be used by an optimizer.
-#     The Chi squared is calculated from the model function ``func_model`` or
-#     from a pre-calculated model (see Keywords).
+def calculate_chi2(params, data, func_model, *args, **kwargs):
+    """
+    DEPRECATED
+    Calculate a Chi squared. It can be used by an optimizer.
+    The Chi squared is calculated from the model function ``func_model`` or
+    from a pre-calculated model (see Keywords).
 
-#     Parameters
-#     ----------
-#     params : array
-#         Guess of the parameters.
-#     data : nd-array
-#         Data to fit.
-#     func_model : callable function
-#         Model used to fit the data (e.g. model of the histogram).
-#     *args : list-like
-#         Extra-arguments which are in this order: the uncertainties (same shape as ``data``),\
-#             x-axis, arguments of ``func_model``.
-#     **kwargs : keywords
-#         Accepted keywords are: ``use_this_model`` to use a predefined model of the data;\
-#             keywords to pass to ``func_model``.
+    Parameters
+    ----------
+    params : array
+        Guess of the parameters.
+    data : nd-array
+        Data to fit.
+    func_model : callable function
+        Model used to fit the data (e.g. model of the histogram).
+    *args : list-like
+        Extra-arguments which are in this order: the uncertainties (same shape as ``data``),\
+            x-axis, arguments of ``func_model``.
+    **kwargs : keywords
+        Accepted keywords are: ``use_this_model`` to use a predefined model of the data;\
+            keywords to pass to ``func_model``.
 
-#     Returns
-#     -------
-#     chi2 : float
-#         chi squared.
+    Returns
+    -------
+    chi2 : float
+        chi squared.
 
-#     """
-#     if len(args) >= 1 and args[0] is not None:
-#         data_err = args[0]
-#     else:
-#         data_err = np.ones_like(data)
+    """
+    if len(args) >= 1 and args[0] is not None:
+        data_err = args[0]
+    else:
+        data_err = np.ones_like(data)
         
-#     if 'use_this_model' in kwargs.keys():
-#         model = kwargs['use_this_model']
-#     else:
-#         model = func_model(params, *args[1:], **kwargs)[0]
-#         model = model.reshape((data.shape[0], -1))
-#         model = model / model.sum(1)[:,None] * data.sum(1)[:, None]
-#         model = model.ravel()
+    if 'use_this_model' in kwargs.keys():
+        model = kwargs['use_this_model']
+    else:
+        model = func_model(params, *args[1:], **kwargs)[0]
+        model = model.reshape((data.shape[0], -1))
+        model = model / model.sum(1)[:,None] * data.sum(1)[:, None]
+        model = model.ravel()
         
-#     chi2 = np.sum((data.ravel() - model)**2 / data_err.ravel()**2)
-#     chi2 = chi2 / (data.size - len(params))
-#     return -chi2
+    chi2 = np.sum((data.ravel() - model)**2 / data_err.ravel()**2)
+    chi2 = chi2 / (data.size - len(params))
+    return chi2
 
 
 def wrap_residuals(func, ydata, transform):
