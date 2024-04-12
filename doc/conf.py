@@ -52,6 +52,7 @@ autodoc_mock_imports = [
 'cupyx',
 'grip',
 'functools',
-'numdifftools'
+'numdifftools',
+'astropy'
 ]
 
