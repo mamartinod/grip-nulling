@@ -26,6 +26,7 @@ Find the documentation [here](https://mamartinod.github.io/grip/).
 - h5py >= 3.8.0
 - emcee >= 3.1.4
 - cupy >= 11.5.0 (optional and not downloaded during the installation)
+- astropy >= 5.2.1
 
 ## How-to
 1. Clone or download the repo.
