@@ -14,7 +14,8 @@ setup(
 		'matplotlib>=3.6.3',
 		'h5py>=3.8.0',
 		'emcee>=3.1.4',
-		'numdifftools>=0.9.41'
+		'numdifftools>=0.9.41',
+		'astropy>=5.2.1'
     ],
 
 

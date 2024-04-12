@@ -140,7 +140,7 @@ def load_data(data_batch, kw_to_extract, wl_edges, file_type, *args):
 
 def _load_hdf5(data_batch, kw_to_extract, wl_scale, data_dic):
     """
-    Load HDF5 files.
+    Load HDF5 files and extract some data then put them in a dictionary.
 
     Parameters
     ----------
@@ -180,7 +180,7 @@ def _load_hdf5(data_batch, kw_to_extract, wl_scale, data_dic):
 
 def _load_fits(data_batch, kw_to_extract, wl_scale, data_dic, idx_hdu):
     """
-    
+    Load FITS files and extract some data then put them in a dictionary.
 
     Parameters
     ----------
