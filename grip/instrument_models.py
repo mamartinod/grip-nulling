@@ -92,23 +92,66 @@ def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, 
         
 def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias, 
                opd, IA, IB, thermal_bckg, sigma_eps):
-    """Compute the null depth.
-
+    """
+    Compute the null depth.
+    
     Compute the null depth from generated random values of photometries, detector noise and OPD. 
-    The estimator is the ratio of the null over the antinull fluxes.
+    The estimator is the ratio of the null over the antinull fluxes.   
+
+    Parameters
+    ----------
+    na : float
+        Self-calibrated null depth.
+    wavelength : 1d-array
+        Wavelength in the same unit as the OPD.
+    wl_idx : int
+        wavelength cursor.
+    spec_chan_width : float
+        Width of a spectral channel, in the same unit as ``wavelength``.
+    phase_bias : float
+        Constant term of the phase, in radians.
+    opd : 1d-array
+        Sequence of OPD. If single value, must be in an array of shape (1,).
+    IA : 1d-array
+        Sequence of intensity of beam 1 contributing to the interferences. If single value, must be in an array of shape (1,).
+    IB : 1d-array
+        Sequence of intensity of beam 2 contributing to the interferences. If single value, must be in an array of shape (1,).
+    thermal_bckg : 1d-array
+        Sequence of therma background. If single value, must be in an array of shape (1,).
+    sigma_eps : 1d-array
+        Sequence of intra-frame phase fluctuations. If single value, must be in an array of shape (1,).
+
+    Returns
+    -------
+    null : 1d-array
+        Sequence of simulated null depth. If cupy is installed, this is a cupy (GPU hosted) array
+    Iminus : 1d-array
+        Sequence of simulated destructive interference. If cupy is installed, this is a cupy (GPU hosted) array
+    Iplus : 1d-array
+        Sequence of simulated constructive interference. If cupy is installed, this is a cupy (GPU hosted) array
+
     """
     visibility = (1 - na) / (1 + na)
     wave_number = 1./wavelength
-    cosine = cp.cos(2 * np.pi * wave_number * opd + phase_bias)
+    
+    thermal_bckg = cp.array([thermal_bckg], dtype=cp.float32).reshape(thermal_bckg.shape)
+    IA = cp.array([IA]).reshape(IA.shape)
+    IB = cp.array([IB]).reshape(IB.shape)
+    
+    cos_arg = 2 * np.pi * wave_number * opd + phase_bias
+    cos_arg = cp.array([cos_arg], dtype=cp.float32).reshape(cos_arg.shape)
+    cosine = cp.cos(cos_arg)
     delta_wave_number = spec_chan_width / wavelength**2
     arg = np.pi*delta_wave_number * opd
+    arg = cp.array([arg], dtype=cp.float32).reshape(arg.shape)
     sinc = cp.sin(arg) / arg
 
     cosine = cosine * sinc
 
-    blurring = (1 - 0.5*sigma_eps**2 + 0.125 * sigma_eps**4)
-    Iminus = IA + IB + 2 * np.sqrt(IA * IB) * visibility * blurring * cosine
-    Iplus = IA + IB + 2 * np.sqrt(IA * IB)
+    blurring = 1 - 0.5*sigma_eps**2 + 0.125 * sigma_eps**4
+    blurring = cp.array([blurring], dtype=cp.float32).reshape(blurring.shape)
+    Iminus = IA + IB + 2 * cp.sqrt(IA * IB) * visibility * blurring * cosine
+    Iplus = IA + IB + 2 * cp.sqrt(IA * IB)
     Iminus = Iminus + thermal_bckg
     null = Iminus / Iplus
 
