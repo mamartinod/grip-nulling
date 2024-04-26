@@ -325,8 +325,8 @@ def plot_parameter_space_2d(param_map, mapx, mapy, mapz, argz, stepx, stepy,
     """
 
     if valminmax is None:
-        valmin = np.nanmin(param_map)
-        valmax = np.nanmax(param_map)
+        valmin = np.nanmin(param_map[~np.isinf(param_map)])
+        valmax = np.nanmax(param_map[~np.isinf(param_map)])
     else:
         valmin, valmax = valminmax
 
@@ -361,3 +361,4 @@ def plot_parameter_space_2d(param_map, mapx, mapy, mapz, argz, stepx, stepy,
             text, basin_hopping_count, x_id, y_id, wl_min, wl_max)
         save_name = save_name + '.png'
         plt.savefig(save_name, format='png', dpi=150)
+        
