@@ -13,6 +13,7 @@ from scipy.linalg import svd
 import numdifftools as nd
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning) 
+from scipy.stats import multinomial
 
 def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, histo_err=None, **kwargs):
     """
@@ -93,7 +94,8 @@ def ramanujan(n):
         Factorial of ``n``.
 
     """
-    stirling = n * np.log(n) - n
+    epsilon = 1e-15
+    stirling = n * np.log(n + epsilon) - n
     rama = stirling + 1/6 * np.log(8*n**3 + 4*n**2 + n + 1/30) + np.log(np.pi)/2
     try:
         rama[np.where(n==0)[0]] = 1
@@ -175,6 +177,53 @@ def log_chi2(params, data, func_model, *args, **kwargs):
     
     return chi2
 
+def chi2_pearson(params, data, func_model, *args, **kwargs):
+    """
+    Pearson's chi-squared test. This estimator is relevant for fitting histograms assuming
+    the number of elements in the bins follows a multinomial distribution.
+    
+    The number of degrees of freedom is defined as: :math:`N_{bins} - (N_{params} + 1)`
+    
+    More info: https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
+
+    Parameters
+    ----------
+    params : array
+        Guess of the parameters.
+    data : nd-array
+        Data to fit.
+    func_model : callable function
+        Model used to fit the data (e.g. model of the histogram).
+    *args : list-like
+        Extra-arguments which are in this order: the uncertainties (same shape as ``data``),\
+            x-axis, arguments of ``func_model``.
+    **kwargs : keywords
+        Accepted keywords are: ``use_this_model`` to use a predefined model of the data;\
+            keywords to pass to ``func_model``.
+
+    Returns
+    -------
+    chi2 : float
+        Pearson's chi-squared.
+
+    """
+    if 'use_this_model' in kwargs.keys():
+        model = kwargs['use_this_model']
+    else:
+        if isinstance(args[-1], dict):
+            kwargs = args[-1]
+            args = list(args)
+            args = args[:-1]        
+        model = func_model(params, *args, **kwargs)[0]
+    
+    model = model.reshape((data.shape[0], -1))
+    model = model / model.sum(1)[:,None] * data.sum(1)[:, None]
+    model = model.ravel()
+        
+    chi2 = np.sum((data.ravel() - model)**2 / model)
+    
+    return chi2
+    
 
 def log_multinomial(params, data, func_model, *args, **kwargs):
     """
@@ -202,48 +251,30 @@ def log_multinomial(params, data, func_model, *args, **kwargs):
         log of the likelihood. The negative is picked for minimize algorithm to work.
 
     """
-    fact_n_i = ramanujan(data)
-    
     if 'use_this_model' in kwargs.keys():
         model = kwargs['use_this_model']
 
         if data.ndim == 2:
             model = model.reshape((data.shape[0], -1))
     
-        if data.ndim == 2:
-            n_obs = np.sum(data, 1, keepdims=True)
-        else:
-            n_obs = data.sum()
-    
-        model = model / model.sum(1, keepdims=True) * n_obs
+        model = model / model.sum(1, keepdims=True)
     else:
         if isinstance(args[-1], dict):
             kwargs = args[-1]
             args = list(args)
             args = args[:-1]
         model = func_model(params, *args, **kwargs)[0]
-
         model = model.reshape((data.shape[0], -1))
-        model = model / model.sum(1)[:,None] * data.sum(1)[:, None]
     
+    model = model / model.sum(1, keepdims=True)
 
 
-    logmodel = np.log(model)
-    logsum = np.log(np.sum(model, 1, keepdims=True))
-    logmodel -= logsum
-    
-    try:
-        mini = np.nanmin(logmodel[~np.isinf(logmodel)])
-    except:
-        mini = -15
-    logmodel[np.isinf(logmodel)] = mini
-        
-    lklh = np.sum(data * logmodel - fact_n_i)
+    lklh = multinomial.logpmf(data, data.sum(1), model)
+    lklh = np.sum(lklh)
 
     return lklh
 
-        
-def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None, diff_step=None, func_args=(), func_kwargs={}):
+def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None, func_args=(), func_kwargs={}):
     """
     Wrapper using the ``scipy.optimize.minimize`` with the L-BFGS-B algorithm.    
 
@@ -292,13 +323,6 @@ def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None
     
     func_args = tuple(func_args)
 
-    # res = minimize(cost_func, p0, args=func_args, 
-    #                 method='L-BFGS-B', jac='3-point',
-    #                 bounds=bounds,
-    #                 options={'finite_diff_rel_step':diff_step})
-    # popt = res.x
-    # pcov = res.hess_inv.todense()
-
     res = minimize(cost_func, p0, args=func_args, 
                     method='powell',
                     bounds=bounds)
@@ -339,53 +363,6 @@ def log_prior_uniform(params, bounds):
     else:
         return -np.inf
 
-
-# def log_posterior(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs={}, neg_lklh=True):
-#     """
-#     Posterior of the data.
-
-#     Parameters
-#     ----------
-#     params : list-like
-#         List of parameters.
-#     lklh_func : function
-#         Likelihood function to use.
-#     bounds : array-like
-#         Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),...).
-#     func_model : function
-#         Function of the model which reproduces the data to fig (e.g. histogram).
-#     data : array of size (N,) or (nb wl, N)
-#         Data to fit.
-#     func_args : list-like, optional
-#         Arguments to pass to ``func_model``. The default is ().
-#     func_kwargs : dic-like, optional
-#         Keywords to pass to ``func_model``. The default is {}.
-#     neg_lklh : bool, optional
-#         Change the sign of the value of the likelihood. 
-#         If ``True``, it means the returned likelihood by ``lklh_func`` is negative thus it signs must be reverted.
-#         The default is True.
-
-#     Returns
-#     -------
-#     log_posterior : float
-#         value of the posterior.
-
-#     """
-
-#     log_pr = log_prior_uniform(params, bounds)
-#     log_lklh = lklh_func(params, data, func_model, *func_args, **func_kwargs)
-    
-#     if not neg_lklh:
-#         sign = 1.
-#     else:
-#         sign = -1.
-        
-#     log_posterior = log_pr + sign * log_lklh
-    
-#     if not np.isnan(log_posterior):
-#         return log_posterior
-#     else:
-#         return -np.inf
 
 def log_posterior(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs={}):
     """
