@@ -659,14 +659,23 @@ def get_cdf(data):
 
 
 def get_dark_cdf(dk, wl_scale0):
-    """Get the CDF for generating RV from measured dark distributions.
+    """
+    Get the CDF for generating RV from measured dark distributions.
 
-    :param dk: dark data
-    :type dk: array-like
-    :param wl_scale0: wavelength axis
-    :type wl_scale0: array
-    :return: axis of the CDF and the CDF
-    :rtype: 2-tuple
+    Parameters
+    ----------
+    dk : array-like
+        dark data.
+    wl_scale0 : array
+        wavelength axis.
+
+    Returns
+    -------
+    dark_axis : nd-array
+        axis of the CDF.
+    dark_cdf : nd-array
+        CDF.
+
     """
     dark_size = [len(np.linspace(dk[i].min(), dk[i].max(),
                                   np.size(np.unique(dk[i])),
@@ -679,8 +688,7 @@ def get_dark_cdf(dk, wl_scale0):
                           for i in range(len(wl_scale0))],
                           dtype=cp.float32)
 
-    dark_cdf = cp.array([cp.asnumpy(computeCdf(dark_axis[i], dk[i],
-                                                'cdf', True))
+    dark_cdf = cp.array([computeCdf(dark_axis[i], dk[i], 'cdf', True)
                           for i in range(len(wl_scale0))],
                         dtype=cp.float32)
 
