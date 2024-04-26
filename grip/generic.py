@@ -11,6 +11,7 @@ import sys
 from astropy.io import fits
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
+from functools import wraps
 
 def get_zeta_coeff(path, wl_scale, plot=False, **kwargs):
     """
@@ -330,19 +331,17 @@ def get_injection_and_spectrum(photoA, photoB, wl_scale,
     return (fluxes, spectra)
 
 
-def check_init_guess(guess, l_bound, u_bound):
+def check_init_guess(guess, bound):
     """
     Check the initial guess in config file are between the bounds for a\
         parameter to fit.
 
     Parameters
     ----------
-    guess : float
-        value of the initial guess in config file.
-    l_bound : float
-        value of the lower bound in config file.
-    u_bound : float
-        value of the upper bound in config file.
+    guess : list-like or array
+        values of the initial guess.
+    bound : list-like or array
+        (...,2) list of boundaries of shape (..., (lower bound, upper bound)).
 
     Returns
     -------
@@ -350,8 +349,8 @@ def check_init_guess(guess, l_bound, u_bound):
         ``True`` if the initial guess is not between the bounds.
 
     """
-    check = np.any(guess <= np.array(u_bound)[:, 0]) or np.any(
-        guess >= np.array(l_bound)[:, 1])
+    check = np.any(guess < np.array(bound)[:, 0]) or np.any(
+        guess > np.array(bound)[:, 1])
     return check
 
 def return_neg_func(func):
@@ -371,13 +370,14 @@ def return_neg_func(func):
         negative version of the function.
 
     """
+    @wraps(func)
     def wrapper(*args, **kwargs):
         return -func(*args, **kwargs)
     return wrapper
 
-def tempering(func, tempering_factor):
+def rescaling(func, rescale_factor):
     """
-    Scale a function by a constant.
+    Rescale a function by a constant.
     It performs *tempering* in MCMC, i.e. to smoothen/sharpen the log-likelihood function.
     Indeed, if the log-likelihood decrease by 1 unit, it means the event is 2.7x less likely to happen.
     Some log-likelihood functions needs to be tempered before being explored by MCMC algorithm.
@@ -399,10 +399,12 @@ def tempering(func, tempering_factor):
     >>> tempering(log_chi2, -2 / ddof) # Returns a reduced chi2 cost function
 
     """
-    def tempered_func(*args, **kwargs):
-        return func(*args, **kwargs) * tempering_factor
-    return tempered_func
+    @wraps(func)
+    def rescaled_func(*args, **kwargs):
+        return func(*args, **kwargs) * rescale_factor
+    return rescaled_func
 
+   
 # def load_data(data_batch, kw_to_extract, wl_edges):
 #     """
 #     DEPRECATED
