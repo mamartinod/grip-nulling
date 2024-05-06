@@ -67,5 +67,6 @@ Navigation
    instrument_models
    histogram_tools
    generic
-   fit_tools
+   fitting
+   load_files
 

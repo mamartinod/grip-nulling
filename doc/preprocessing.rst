@@ -1,5 +1,5 @@
-Module: Preprocessing
-=====================
+Preprocessing
+=============
 
 .. automodule:: preprocessing
    :members:

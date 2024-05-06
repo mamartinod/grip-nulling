@@ -1,5 +1,5 @@
-Module: Plotting tools
-======================
+Plots
+========
 
 .. automodule:: plots
    :members:

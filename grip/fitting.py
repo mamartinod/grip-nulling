@@ -14,6 +14,7 @@ import numdifftools as nd
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning) 
 from scipy.stats import multinomial
+from functools import wraps
 
 def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, histo_err=None, **kwargs):
     """
@@ -630,3 +631,139 @@ def lstsqrs_fit(func_model, p0, xdata, ydata, yerr=None, bounds=None,
                       category=OptimizeWarning)
 
     return popt, pcov, res
+
+def return_neg_func(func):
+    """
+    Return a callable which is the negative of a function: `f(x) -> -f(x)`.
+    
+    It can be used to create a callable cost function one wants to minimize (e.g. :math:`\chi^2` estimator).
+
+    Parameters
+    ----------
+    func : callable
+        function to return the negative version.
+
+    Returns
+    -------
+    callable
+        negative version of the function.
+
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return -func(*args, **kwargs)
+    return wrapper
+
+def rescaling(func, rescale_factor):
+    """
+    Rescale a function by a constant.
+    It performs *tempering* in MCMC, i.e. to smoothen/sharpen the log-likelihood function.
+    Indeed, if the log-likelihood decrease by 1 unit, it means the event is 2.7x less likely to happen.
+    Some log-likelihood functions needs to be tempered before being explored by MCMC algorithm.
+    
+    Note: the shape of the posterior is scaled by the square root of the tempering factor :math:`1 / \sqrt{tempering~factor}`.
+        
+    Parameters
+    ----------
+    func : callable
+        Function to rescale.
+    tempering_factor : float
+        Scale factor.
+
+    Returns
+    -------
+    callable
+        Rescaled function.
+
+    >>> tempering(log_chi2, -2 / ddof) # Returns a reduced chi2 cost function
+
+    """
+    @wraps(func)
+    def rescaled_func(*args, **kwargs):
+        return func(*args, **kwargs) * rescale_factor
+    return rescaled_func
+
+def check_init_guess(guess, bound):
+    """
+    Check the initial guess in config file are between the bounds for a\
+        parameter to fit.
+
+    Parameters
+    ----------
+    guess : list-like or array
+        values of the initial guess.
+    bound : list-like or array
+        (...,2) list of boundaries of shape (..., (lower bound, upper bound)).
+
+    Returns
+    -------
+    check : bool
+        ``True`` if the initial guess is not between the bounds.
+
+    """
+    check = np.any(guess < np.array(bound)[:, 0]) or np.any(
+        guess > np.array(bound)[:, 1])
+    return check
+
+def basin_hoppin_values(mu0, sig0, na0, bounds_mu, bounds_sig,
+                        bounds_na):
+    """
+    Create several initial guesses.
+
+    Create as many as initial guess as there are basin hopping iterations
+    to do.
+    The generation of these values are done with a normal distribution.
+
+    Parameters
+    ----------
+    mu0 : float
+        Instrumental OPD around which random initial guesses are created.
+    sig0 : float
+        Instrumental OPD around which random initial guesses are created.
+    na0 : float
+        Null depth of the source around which random initial guesses are created.
+    bounds_mu : 2-tuple
+        Lower and upper bounds between which the random values of ``mu_opd`` must be.
+    bounds_sig : 2-tuple
+        Lower and upper bounds between which the random values of ``sig_opd`` must be.
+    bounds_na : 2-tuple
+        Lower and upper bounds between which the random values of ``na`` must be.
+
+    Returns
+    -------
+    out: 3-tuple
+        New initial guess for ``mu_opd``,
+        new initial guess for ``sig_opd``,
+        new initial guess for ``na``
+
+    """
+    print('Random withdrawing of init guesses')
+
+    for _ in range(1000):
+        mu_opd = np.random.normal(mu0, 50)
+        if mu_opd > bounds_mu[0] and mu_opd < bounds_mu[1]:
+            break
+        if _ == 1000-1:
+            print('mu_opd: no new guess, take initial one')
+            mu_opd = mu0
+
+    for _ in range(1000):
+        sig_opd = abs(np.random.normal(sig0, 50.))
+        if sig_opd > bounds_sig[0] and sig_opd < bounds_sig[1]:
+            break
+        if _ == 1000-1:
+            print('sig opd: no new guess, take initial one')
+            sig_opd = sig0
+
+    for _ in range(1000):
+        na = np.random.normal(na0, 0.03)
+        if na > bounds_na[0] and na < bounds_na[1]:
+            break
+        if _ == 1000-1:
+            print('na: no new guess, take initial one')
+            na = na0
+
+    print('Random drawing done')
+#    np.random.set_state(orig_seed)
+    out = (mu_opd, sig_opd, na)
+    return out

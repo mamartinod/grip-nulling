@@ -1,6 +1,6 @@
-Generic
+Fitting
 =======
 
-.. automodule:: generic
+.. automodule:: fitting
    :members:
    :undoc-members:

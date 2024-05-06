@@ -1,5 +1,5 @@
-Module: Histogram tools
-=======================
+Histogram tools
+===============
 
 .. automodule:: histogram_tools
    :members:

@@ -195,3 +195,50 @@ def sortFrames(dic_data, kw_list, nb_frames_to_bin, quantile, factor_minus, fact
 
     intensities = (Iminus, Iplus)
     return new_dic, idx_good_frames, intensities
+
+def get_injection_and_spectrum(photoA, photoB, wl_scale,
+                               wl_bounds):
+    """
+    Get the distributions of the broadband injections and the spectra of\
+        beams A and B.
+
+    Parameters
+    ----------
+    photoA : array-like
+        Values of the photometric output of beam A.
+    photoB : array-like
+        Values of the photometric output of beam B.
+    wl_scale : array-like
+        Wavelength of the spectra in nm.
+    wl_bounds : 2-tuple, optional
+        Boundaries between which the spectra are extracted.\
+            The wavelengths are expressed in nm.
+
+    Returns
+    -------
+    2-tuple of 2d-array
+        The first element contains the broadband\
+                injection of beams A and B, respectively. The second element\
+                contains the spectra of beams A and B, respectively.
+
+    """
+    # Select the large bandwidth on which we measure the injection
+    idx_wl = np.arange(wl_scale.size)
+    idx_wl = idx_wl[(wl_scale >= wl_bounds[0]) & (wl_scale <= wl_bounds[1])]
+    photoA = photoA[idx_wl]
+    photoB = photoB[idx_wl]
+
+    # Extract the spectrum
+    spectrumA = photoA.mean(axis=1)
+    spectrumB = photoB.mean(axis=1)
+    spectrumA = spectrumA / spectrumA.sum()
+    spectrumB = spectrumB / spectrumB.sum()
+
+    # Extract the injection for generating random values
+    fluxA = photoA.sum(axis=0)
+    fluxB = photoB.sum(axis=0)
+    
+    fluxes = np.array([fluxA, fluxB])
+    spectra = np.array([spectrumA, spectrumB])
+
+    return (fluxes, spectra)
