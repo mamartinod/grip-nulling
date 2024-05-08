@@ -102,8 +102,11 @@ def plot_null_distributions(nb_rows_plot, wl_scale, text, null_axis, null_pdf,\
                         bbox=dict(boxstyle="square",
                                   facecolor='white'), fontsize=17)
 
+        wl_min = wl_scale[wl_idx[0]]
+        wl_max = wl_scale[wl_idx[-1]]
+        save_name2 = save_name + '_' + str(int(wl_min)) + '-' + str(int(wl_max))
         if save_fig:
-            plt.savefig(save_path+save_name+'.png', dpi=150)    
+            plt.savefig(save_path+save_name2+'.png', dpi=150)    
     
     
 def plot_diag_spectral_data(nb_rows_plot, wl_scale, data_xy, labels, save_path, \
@@ -200,8 +203,13 @@ def plot_diag_spectral_data(nb_rows_plot, wl_scale, data_xy, labels, save_path, 
                 plt.xlabel('Flux (AU)', size=20)
             count += 1
         plt.tight_layout()
+
+        wl_min = wl_scale[wl_idx[0]]
+        wl_max = wl_scale[wl_idx[-1]]
+        save_name2 = save_name + '_' + str(int(wl_min)) + '-' + str(int(wl_max))
         if save_fig:
-            plt.savefig(save_path+save_name+'.png', dpi=150)  
+            plt.savefig(save_path+save_name2+'.png', dpi=150)  
+
 
 def plot_diag_nonspectral_data(data_xy, labels, save_path, \
                     save_name, markers=['.', '-', '-'], save_fig=True):
