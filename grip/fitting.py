@@ -275,9 +275,10 @@ def log_multinomial(params, data, func_model, *args, **kwargs):
 
     return lklh
 
-def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None, func_args=(), func_kwargs={}):
+def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None, 
+                 hessian_method='backward', func_args=(), func_kwargs={}):
     """
-    Wrapper using the ``scipy.optimize.minimize`` with the L-BFGS-B algorithm.    
+    Wrapper using the ``scipy.optimize.minimize`` with the Powell algorithm.    
 
     Parameters
     ----------
@@ -295,6 +296,8 @@ def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None
         uncertainties on the data. The default is None.
     bounds : array-like, optional
         Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),...). The default is None.
+    hessian_method: string, optional
+        Can accept 'central', 'forward', 'backward'. Sometines numdifftools returns an Hessian matrix with NaN. The reason is unknown. Changing the method can solve it. The default is 'backward'. More info on https://numdifftools.readthedocs.io/en/v0.9.41/reference/generated/numdifftools.core.Hessian.html
     func_args : list-like, optional
         Arguments to pass to ``func_model``. The default is ().
     func_kwargs : dic-like, optional
@@ -332,8 +335,21 @@ def minimize_fit(cost_func, func_model, p0, xdata, ydata, yerr=None, bounds=None
     if len(func_kwargs.keys()) > 0 and 'verbose' in func_kwargs.keys():
         func_args[-1]['verbose'] = False
     
-    hessian_matrix = nd.Hessian(cost_func, method='central')(popt, *func_args)
+    hessian_matrix = nd.Hessian(cost_func, method=hessian_method)(popt, *func_args)
     
+    if np.any(np.isnan(hessian_matrix)):
+        if hessian_method == 'backward':
+            print('NaN in Hessian, recalculate with Central method')
+            hessian_matrix = nd.Hessian(cost_func, method='central')(popt, *func_args)
+        elif hessian_method == 'central':
+            print('NaN in Hessian, recalculate with Backward method')
+            hessian_matrix = nd.Hessian(cost_func, method='backward')(popt, *func_args)
+            
+    if np.any(np.isnan(hessian_matrix)):
+        print('NaN in Hessian, recalculate with Forward method')
+        hessian_matrix = nd.Hessian(cost_func, method='forward')(popt, *func_args)
+    
+    # Sometines the Hessian matrix has nan. The reason is unknown. Changing the method looks to solve it.
     pcov = np.linalg.inv(hessian_matrix)
 
     return popt, pcov, res
