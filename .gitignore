@@ -416,3 +416,27 @@ tutorials/.ipynb_checkpoints/
 build/lib/grip/
 
 grip.egg-info/
+
+doc/_build/doctrees/fitting.doctree
+
+doc/_build/doctrees/load_files.doctree
+
+doc/_build/doctrees/plotting.doctree
+
+doc/_build/html/_sources/fitting.rst.txt
+
+doc/_build/html/_sources/load_files.rst.txt
+
+doc/_build/html/_sources/plotting.rst.txt
+
+doc/_build/html/fitting.html
+
+doc/_build/html/load_files.html
+
+doc/_build/html/plotting.html
+
+demo.txt
+
+grip/table.fits
+
+grip/table2.fits
