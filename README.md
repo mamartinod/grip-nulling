@@ -25,8 +25,9 @@ Find the documentation [here](https://mamartinod.github.io/grip/).
 - matplotlib >= 3.6.3
 - h5py >= 3.8.0
 - emcee >= 3.1.4
-- cupy >= 11.5.0 (optional and not downloaded during the installation)
+- numdifftools >= 0.9.41
 - astropy >= 5.2.1
+- cupy >= 11.5.0 (optional and has to be manually installed besides GRIP)
 
 ## How-to
 1. Clone or download the repo.
