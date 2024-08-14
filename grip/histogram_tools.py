@@ -11,7 +11,7 @@ try:
     onGpu = True
 except ModuleNotFoundError:
     import numpy as cp
-    from scipy.special import ndtr, pdtr
+    from scipy.special import ndtr
     onGpu = False
 from functools import wraps
 
@@ -54,7 +54,8 @@ def create_histogram_model(params_to_fit, dist_params, xbins, wl_scale0, instrum
     rvus : tuple. First put CDF of quantities which does not depend on the wavelength.
         For wavelength-dependant quantity, 1st axis = wavelength.
     **kwargs : keywords
-        ``n_samp_per_loop`` (int): number of samples for the MC simulation per loop.\\
+        ``n_samp_per_loop`` (int): number of samples for the MC simulation per loop.
+        
         ``nloop`` (int): number of loops
 
     Returns
@@ -80,16 +81,21 @@ def create_histogram_model(params_to_fit, dist_params, xbins, wl_scale0, instrum
     The keys of the dictionary must match the labels in `dist_params`. If a key is not found, a new sequence is generated.
     For a key, the value can be `None` if no reproductibility is expected from this distribution.
     
-    For example, let's assume a model that take the parameters: null depth, correcting factor, $\mu$ and $\sigma$ of 2 normal distributions
-    and the $\lambda$ of a Poisson distribution.
+    For example, let's assume a model that take the parameters: null depth, correcting factor, :math:`\mu` and :math:`\sigma` of 2 normal distributions
+    and the :math:`\lambda` of a Poisson distribution.
 
     We have :
-        - `params_to_fit = [null depth, correcting factor, $\mu_1$ and $\sigma_1$, $\mu_1$ and $\sigma_1$, $\lambda$]`
-        - `dist_params = ['nonrv', 'nonrv', 'normal1', 'normal1', 'normal2', 'normal2', 'poisson']`
-        - `rvus_forfit = {'normal1':None, 'normal2':array([0.27259743, 0.89770258, 0.72093494]), 'poisson':None}`
+        - ``params_to_fit = [null depth, correcting factor, :math:`\mu_1` and :math:`\sigma_1`, :math:`\mu_1` and :math:\sigma_1`, :math:`\lambda`]``
+        - ``dist_params = ['nonrv', 'nonrv', 'normal1', 'normal1', 'normal2', 'normal2', 'poisson']``
+        - ``rvus_forfit = {'normal1':None, 'normal2':array([0.27259743, 0.89770258, 0.72093494]), 'poisson':None}``
     
     The function will identified their are 2 *constant* parameters, 3 distributions to model with respectively 2, 2 and 1 parameters.
-    Among these 3 distributions, only one is reproductible if given the same set of values between two calls of the function `create_histogram_model`.
+    Among these 3 distributions, only one is reproductible if given the same set of values between two calls of the function ``create_histogram_model``.
+    
+    Implemented distributions and their associated keywords are:
+        - Normal distribution with keyword 'normal[...]' pattern, compatible with frozen uniform sequence
+        - Poisson distribution with keyword 'poisson[...]' pattern, not compatible with frozen uniform sequence
+
     """
 
     dtypesize = cp.float32
@@ -199,7 +205,7 @@ def create_histogram_model(params_to_fit, dist_params, xbins, wl_scale0, instrum
             # """
             # Generate a signal delivered by the instrument given the input parameters
             # """
-            out = instrument_model(nonrv_params_to_fit, rvs_to_fit, wl_scale0[k], k, *instrument_args, *rv1d_arr, *rv2d_arr) #TODO update models
+            out = instrument_model(nonrv_params_to_fit, rvs_to_fit, wl_scale0[k], k, *instrument_args, *rv1d_arr, *rv2d_arr) #TODO update models of instrument
             diag_temp.append(out[1:])
             out = out[0]
 
@@ -1047,23 +1053,3 @@ def getErrorBinomNorm(pdf, data_size, normed):
         pdf_err = (pdf * (1 - pdf/data_size))**0.5  # binom-norm
     pdf_err[pdf_err == 0] = pdf_err[pdf_err != 0].min()
     return pdf_err
-
-
-lam = 5
-n = 10000
-dtypesize = cp.float32
-a = cp.random.poisson(lam, n, dtype=dtypesize)
-ax_min = int(max(0, lam - 6 * lam**0.5))
-ax_max = int(lam + 6 * lam**0.5)
-axis = cp.arange(ax_min, ax_max, dtype=dtypesize)
-cdf = pdtr(axis, lam)
-rv = grip.rv_generator(axis, cdf, n)
-a = cp.asnumpy(a)
-rv = cp.asnumpy(rv)
-
-hist2 = np.histogram(rv, 100, density=True)
-hist1 = np.histogram(a, hist2[1], density=True)
-
-plt.figure()
-plt.plot(hist1[1][:-1], hist1[0])
-plt.plot(hist2[1][:-1], hist2[0])
