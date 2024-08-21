@@ -205,7 +205,7 @@ def create_histogram_model(params_to_fit, dist_params, xbins, wl_scale0, instrum
             # """
             # Generate a signal delivered by the instrument given the input parameters
             # """
-            out = instrument_model(nonrv_params_to_fit, rvs_to_fit, wl_scale0[k], k, *instrument_args, *rv1d_arr, *rv2d_arr) #TODO update models of instrument
+            out = instrument_model(nonrv_params_to_fit, rvs_to_fit, wl_scale0[k], k, *instrument_args, *rv1d_arr, *rv2d_arr)
             diag_temp.append(out[1:])
             out = out[0]
 
@@ -255,6 +255,8 @@ def create_histogram_model(params_to_fit, dist_params, xbins, wl_scale0, instrum
 def unpack_dist_params_to_fit(params_to_fit, dist_params, rvus_forfit, n_samp_per_loop, dtypesize):
     params_to_fit = np.array(params_to_fit)
     dist_set = set(dist_params)
+    dist_set.remove('nonrv')
+    dist_set = list(dist_set)
     rvs_to_fit = cp.zeros((len(dist_set), n_samp_per_loop), dtype=dtypesize)
     
     for k in range(len(dist_set)):

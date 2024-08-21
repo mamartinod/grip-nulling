@@ -90,7 +90,7 @@ def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, 
     null = Iminus / Iplus
     return null, Iminus, Iplus
         
-def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias, 
+def lbti_model0(na, wavelength, wl_idx, spec_chan_width, phase_bias, 
                opd, IA, IB, thermal_bckg, sigma_eps):
     """
     Compute the null depth.
@@ -156,3 +156,38 @@ def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias,
     null = Iminus / Iplus
 
     return null, Iminus, Iplus
+
+def lbti_model(nonrv_params_to_fit, opd, wavelength, wl_idx, 
+                spec_chan_width, phase_bias, IA, IB, thermal_bckg, sigma_eps):
+    """
+    nonrv_params_to_fit: list
+    """
+    
+    na, = nonrv_params_to_fit
+    
+    visibility = (1 - na) / (1 + na)
+    wave_number = 1./wavelength
+    
+    thermal_bckg = cp.array([thermal_bckg], dtype=cp.float32).reshape(thermal_bckg.shape)
+    IA = cp.array([IA]).reshape(IA.shape)
+    IB = cp.array([IB]).reshape(IB.shape)
+    print('PLAF', IA.shape, IB.shape)
+    
+    cos_arg = 2 * np.pi * wave_number * opd + phase_bias
+    cos_arg = cp.array([cos_arg], dtype=cp.float32).reshape(cos_arg.shape)
+    cosine = cp.cos(cos_arg)
+    delta_wave_number = spec_chan_width / wavelength**2
+    arg = np.pi*delta_wave_number * opd
+    arg = cp.array([arg], dtype=cp.float32).reshape(arg.shape)
+    sinc = cp.sin(arg) / arg
+
+    cosine = cosine * sinc
+
+    blurring = 1 - 0.5*sigma_eps**2 + 0.125 * sigma_eps**4
+    blurring = cp.array([blurring], dtype=cp.float32).reshape(blurring.shape)
+    Iminus = IA + IB + 2 * cp.sqrt(IA * IB) * visibility * blurring * cosine
+    Iplus = IA + IB + 2 * cp.sqrt(IA * IB)
+    Iminus = Iminus + thermal_bckg
+    null = Iminus / Iplus
+
+    return null, Iminus, Iplus    

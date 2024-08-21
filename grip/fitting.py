@@ -78,6 +78,68 @@ def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins,
     
     return cost_map, param_axes, steps
 
+def explore_parameter_space2(cost_fun, histo_data, param_bounds, parameters_labels, param_sz, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, histo_err=None, **kwargs):
+    """
+    Explore the parameter space with a chosen optimizer (chi2, likelihood...)
+
+    Parameters
+    ----------
+    cost_fun : function
+        Cost function to use for model fitting.
+    histo_data : nd-array
+        Histograms of the data.
+    param_bounds : nested tuple-like
+        Nested tuple of the parameter bounds on the form ((min1, max1), (min2, max2)...).
+    param_sz : list
+        Number of points to sample each parameter axis.
+    xbins : nd-array
+        Bin axes of the histogram.
+    wl_scale0 : 1d-array
+        Wavelength scale.
+    instrument_model : function
+        Function simulating the instrument and noises.
+    instrument_args : tuple
+        Arguments for the ``instrument_model`` function.
+    rvu_forfit : list of two arrays
+        List of uniform random values use to generate normally distributed values with the fitting parameters ``mu`` and ``sig``.
+    cdfs : list of arrays
+        List of the CDF which are used to reproduce the statistics of the noises. There areas many sequences are noise sources to simulate.
+    rvus : list of arrays
+        List of uniform random values use to generate random values to reproduce the statistics of the noises. There areas many sequences are noise sources to simulate.
+    histo_err : TYPE, optional
+        DESCRIPTION. The default is None.
+    **kwargs : keywords
+        Keywords to pass to the ``create_histogram_model`` function.
+
+    Returns
+    -------
+    chi2map : nd-array
+        Datacube containing the value of the cost function and the tested parameters.
+    param_axes : TYPE
+        DESCRIPTION.        
+    steps : array
+        Steps use to sample the parameters axes.
+
+    """
+    
+    param_axes = [np.linspace(param_bounds[k][0], param_bounds[k][1], param_sz[k], endpoint=False, retstep=True)[0] for k in range(len(param_bounds))]
+    steps = [np.linspace(param_bounds[k][0], param_bounds[k][1], param_sz[k], endpoint=False, retstep=True)[1] for k in range(len(param_bounds))]
+    
+    start = time()
+    cost_map = []
+    for param_values in product(*param_axes):
+        parameters = np.array(param_values)
+        out = create_histogram_model(parameters, parameters_labels, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, **kwargs)[0]
+        value = cost_fun(parameters, histo_data, create_histogram_model, histo_err, use_this_model=out)
+        cost_map.append(value)
+        
+    cost_map = np.array(cost_map)
+    cost_map = cost_map.reshape(param_sz)
+    stop = time()
+    print('Duration: %.3f s' % (stop-start))
+    
+    return cost_map, param_axes, steps
+
 def ramanujan(n):
     """
     Ramanujan approximation to calculate the factorial of an integer. 
