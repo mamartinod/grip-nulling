@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 from scipy.stats import multinomial
 from functools import wraps
 
-def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, histo_err=None, **kwargs):
+def explore_parameter_space0(cost_fun, histo_data, param_bounds, param_sz, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, histo_err=None, **kwargs):
     """
     Explore the parameter space with a chosen optimizer (chi2, likelihood...)
 
@@ -78,7 +78,7 @@ def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins,
     
     return cost_map, param_axes, steps
 
-def explore_parameter_space2(cost_fun, histo_data, param_bounds, parameters_labels, param_sz, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, histo_err=None, **kwargs):
+def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins, parameters_labels, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, histo_err=None, **kwargs):
     """
     Explore the parameter space with a chosen optimizer (chi2, likelihood...)
 
@@ -129,7 +129,7 @@ def explore_parameter_space2(cost_fun, histo_data, param_bounds, parameters_labe
     cost_map = []
     for param_values in product(*param_axes):
         parameters = np.array(param_values)
-        out = create_histogram_model(parameters, parameters_labels, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, **kwargs)[0]
+        out = create_histogram_model(parameters, xbins, parameters_labels, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, **kwargs)[0]
         value = cost_fun(parameters, histo_data, create_histogram_model, histo_err, use_this_model=out)
         cost_map.append(value)
         
@@ -166,29 +166,6 @@ def ramanujan(n):
         pass
     return rama
 
-def neg_log_lbti_lklh(params, data, func_model, *args, **kwargs):
-    if data.ndim == 2:
-        n_obs = np.sum(data, 1, keepdims=True)
-    else:
-        n_obs = data.sum()
-
-    if 'use_this_model' in kwargs.keys():
-        model = kwargs['use_this_model']
-    else:
-        if isinstance(args[-1], dict):
-            kwargs = args[-1]
-            args = list(args)
-            args = args[:-1]
-        model = func_model(params, *args, **kwargs)[0]
-        
-    if data.ndim == 2:
-        model = model.reshape((data.shape[0], -1))
-        
-    model = model / model.sum(1, keepdims=True) * n_obs
-        
-    lklh = -2 * np.sum(data * np.log((1 + model) / n_obs))
-    
-    return lklh
 
 def log_chi2(params, data, func_model, *args, **kwargs):
     """

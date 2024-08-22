@@ -90,7 +90,7 @@ def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, 
     null = Iminus / Iplus
     return null, Iminus, Iplus
         
-def lbti_model0(na, wavelength, wl_idx, spec_chan_width, phase_bias, 
+def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias, 
                opd, IA, IB, thermal_bckg, sigma_eps):
     """
     Compute the null depth.
@@ -157,13 +157,58 @@ def lbti_model0(na, wavelength, wl_idx, spec_chan_width, phase_bias,
 
     return null, Iminus, Iplus
 
-def lbti_model(nonrv_params_to_fit, opd, wavelength, wl_idx, 
-                spec_chan_width, phase_bias, IA, IB, thermal_bckg, sigma_eps):
+def test_multiargs(nonrv_params_to_fit, rv_fit, wavelength, wl_idx, 
+                spec_chan_width, phase_bias, IA, IB, thermal_bckg):
     """
-    nonrv_params_to_fit: list
-    """
+    Compute the null depth.
     
-    na, = nonrv_params_to_fit
+    Compute the null depth from generated random values of photometries, detector noise and OPD. 
+    The estimator is the ratio of the null over the antinull fluxes.
+    
+    This version needs 6 parameters to fit: Null depth, mu and sigma OPD, factor correction of the thermal background `ir`,
+    mu and sigma of the fringe blurring `sigma_eps`.
+    
+    This model is used to test the ability of GRIP to handle models with more than 3 parameters and parameters
+    of different natures (of the instrument model or governing the noise in the model).
+
+    Parameters
+    ----------
+    nonrv_params_to_fit : list-like
+        List of the parameters to fit that are not parameters of statistical distributions.
+    rv_fit : list-like
+        List of random values generated from distributions which parameters are to fit.
+    wavelength : 1d-array
+        Wavelength in the same unit as the OPD.
+    wl_idx : int
+        wavelength cursor.
+    spec_chan_width : float
+        Width of a spectral channel, in the same unit as ``wavelength``.
+    phase_bias : float
+        Constant term of the phase, in radians.
+    opd : 1d-array
+        Sequence of OPD. If single value, must be in an array of shape (1,).
+    IA : 1d-array
+        Sequence of intensity of beam 1 contributing to the interferences. If single value, must be in an array of shape (1,).
+    IB : 1d-array
+        Sequence of intensity of beam 2 contributing to the interferences. If single value, must be in an array of shape (1,).
+    thermal_bckg : 1d-array
+        Sequence of therma background. If single value, must be in an array of shape (1,).
+    sigma_eps : 1d-array
+        Sequence of intra-frame phase fluctuations. If single value, must be in an array of shape (1,).
+
+    Returns
+    -------
+    null : 1d-array
+        Sequence of simulated null depth. If cupy is installed, this is a cupy (GPU hosted) array
+    Iminus : 1d-array
+        Sequence of simulated destructive interference. If cupy is installed, this is a cupy (GPU hosted) array
+    Iplus : 1d-array
+        Sequence of simulated constructive interference. If cupy is installed, this is a cupy (GPU hosted) array
+
+    """    
+    na, ir = nonrv_params_to_fit
+    opd = rv_fit[0]
+    sigma_eps = rv_fit[1]
     
     visibility = (1 - na) / (1 + na)
     wave_number = 1./wavelength
@@ -171,7 +216,6 @@ def lbti_model(nonrv_params_to_fit, opd, wavelength, wl_idx,
     thermal_bckg = cp.array([thermal_bckg], dtype=cp.float32).reshape(thermal_bckg.shape)
     IA = cp.array([IA]).reshape(IA.shape)
     IB = cp.array([IB]).reshape(IB.shape)
-    print('PLAF', IA.shape, IB.shape)
     
     cos_arg = 2 * np.pi * wave_number * opd + phase_bias
     cos_arg = cp.array([cos_arg], dtype=cp.float32).reshape(cos_arg.shape)
@@ -187,7 +231,7 @@ def lbti_model(nonrv_params_to_fit, opd, wavelength, wl_idx,
     blurring = cp.array([blurring], dtype=cp.float32).reshape(blurring.shape)
     Iminus = IA + IB + 2 * cp.sqrt(IA * IB) * visibility * blurring * cosine
     Iplus = IA + IB + 2 * cp.sqrt(IA * IB)
-    Iminus = Iminus + thermal_bckg
+    Iminus = Iminus + thermal_bckg * ir
     null = Iminus / Iplus
 
     return null, Iminus, Iplus    
