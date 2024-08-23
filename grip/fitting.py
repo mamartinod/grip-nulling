@@ -46,7 +46,7 @@ def explore_parameter_space(cost_fun, histo_data, param_bounds, param_sz, xbins,
         List of uniform random values use to generate random values to reproduce the statistics of the noises. There areas many sequences are noise sources to simulate.
     histo_err : TYPE, optional
         DESCRIPTION. The default is None.
-    **kwargs : keywords
+    \**kwargs : keywords
         Keywords to pass to the ``create_histogram_model`` function.
 
     Returns
@@ -143,10 +143,10 @@ def log_chi2(params, data, func_model, *args, **kwargs):
         Data to fit.
     func_model : callable function
         Model used to fit the data (e.g. model of the histogram).
-    *args : list-like
+    \*args : list-like
         Extra-arguments which are in this order: the uncertainties (same shape as ``data``),\
             x-axis, arguments of ``func_model``.
-    **kwargs : keywords
+    \**kwargs : keywords
         Accepted keywords are: ``use_this_model`` to use a predefined model of the data;\
             keywords to pass to ``func_model``.
 
@@ -195,10 +195,10 @@ def chi2_pearson(params, data, func_model, *args, **kwargs):
         Data to fit.
     func_model : callable function
         Model used to fit the data (e.g. model of the histogram).
-    *args : list-like
+    \*args : list-like
         Extra-arguments which are in this order: the uncertainties (same shape as ``data``),\
             x-axis, arguments of ``func_model``.
-    **kwargs : keywords
+    \**kwargs : keywords
         Accepted keywords are: ``use_this_model`` to use a predefined model of the data;\
             keywords to pass to ``func_model``.
 
@@ -238,13 +238,13 @@ def log_multinomial(params, data, func_model, *args, **kwargs):
         data to fit.
     func_model : function
         Model of the data.
-    *args : function arguments
+    \*args : function arguments
         extra-arguments to pass to this function and ``func_model``. The first argument must be values of the x-axis of the dataset. 
-        If ``func_model`` takes any keyword, they must be passed in a dictionary in the last position in *args.
-    **kwargs : keywords arguments
+        If ``func_model`` takes any keyword, they must be passed in a dictionary in the last position in \*args.
+    \**kwargs : keywords arguments
         Keywords accepted: 
-            - `use_this_model` (array) : uses the values from a model generated out of this function instead of calling `func_model`
-            - Keywords to pass to `func_model`
+            - ``use_this_model`` (array) : uses the values from a model generated out of this function instead of calling ``func_model``
+            - Keywords to pass to ``func_model``
 
     Returns
     -------
@@ -501,10 +501,10 @@ def calculate_chi2(params, data, func_model, *args, **kwargs):
         Data to fit.
     func_model : callable function
         Model used to fit the data (e.g. model of the histogram).
-    *args : list-like
+    \*args : list-like
         Extra-arguments which are in this order: the uncertainties (same shape as ``data``),\
             x-axis, arguments of ``func_model``.
-    **kwargs : keywords
+    \**kwargs : keywords
         Accepted keywords are: ``use_this_model`` to use a predefined model of the data;\
             keywords to pass to ``func_model``.
 

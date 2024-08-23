@@ -24,7 +24,7 @@ def get_zeta_coeff(path, wl_scale, plot=False, **kwargs):
     plot : bool, optional
         If `True`, the plot of the interpolated zeta coefficients\
             curve is displayed. The default is False.
-    **kwargs : extra keyword arguments
+    \**kwargs : extra keyword arguments
         `wl_bounds` prunes the zeta coeff arrays for them to all have\
         the same wavelength scale.
 

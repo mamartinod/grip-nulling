@@ -43,12 +43,12 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     instrument_model : function
         Function simulating the instrument.
     instrument_args : tuple, must contain same type of data (all float or all array of the same shape)
-        List of arguments to pass to ``instrument_model'' which are not fitted.
+        List of arguments to pass to ``instrument_model`` which are not fitted.
     cdfs : tuple. First put CDF of quantities which does not depend on the wavelength.
         For wavelength-dependant quantity, 1st axis = wavelength.
     rvus : tuple. First put CDF of quantities which does not depend on the wavelength.
         For wavelength-dependant quantity, 1st axis = wavelength.
-    **kwargs : keywords
+    \**kwargs : keywords
         ``n_samp_per_loop`` (int): number of samples for the MC simulation per loop.\\
         ``nloop`` (int): number of loops
 
@@ -228,7 +228,7 @@ def compute_data_histogram(data_null, bin_bounds, wl_scale, **kwargs):
             pruned from ``data_null`` when making the histogram
     wl_scale : 1d-array
         wavelength scale.
-    **kwargs : extra-keywords
+    \**kwargs : extra-keywords
         Use ``normed=False`` to **not** normalise the histogram by its sum.
 
     Returns
