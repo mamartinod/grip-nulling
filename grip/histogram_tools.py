@@ -88,7 +88,7 @@ def create_histogram_model(params_to_fit, xbins, params_type, wl_scale0, instrum
 
     We have :
         - ``params_to_fit = [null depth, correcting factor, :math:`\mu_1` and :math:`\sigma_1`, :math:`\mu_1` and :math:\sigma_1`, :math:`\lambda`]``
-        - ``params_type = ['nonrv', 'nonrv', 'normal1', 'normal1', 'normal2', 'normal2', 'poisson']``
+        - ``params_type = ['deterministic', 'deterministic', 'normal1', 'normal1', 'normal2', 'normal2', 'poisson']``
         - ``rvus_forfit = {'normal1':None, 'normal2':array([0.27259743, 0.89770258, 0.72093494]), 'poisson':None}``
     
     The function will identified their are 2 *constant* parameters, 3 distributions to model with respectively 2, 2 and 1 parameters.
@@ -162,7 +162,7 @@ def create_histogram_model(params_to_fit, xbins, params_type, wl_scale0, instrum
     # """
     # Unpack the parameters to fit that are not parameters of statistical distributions.
     # """
-    nonrv_params_to_fit = [elt for elt, elt2 in zip(params_to_fit, params_type) if elt2=='nonrv']
+    deterministic_params_to_fit = [elt for elt, elt2 in zip(params_to_fit, params_type) if elt2=='deterministic']
 
     # """
     # Generate random values from distributions which parameters are to be estimated.
@@ -207,7 +207,7 @@ def create_histogram_model(params_to_fit, xbins, params_type, wl_scale0, instrum
             # """
             # Generate a signal delivered by the instrument given the input parameters
             # """
-            out = instrument_model(nonrv_params_to_fit, rvs_to_fit, wl_scale0[k], k, *instrument_args, *rv1d_arr, *rv2d_arr)
+            out = instrument_model(deterministic_params_to_fit, rvs_to_fit, wl_scale0[k], k, *instrument_args, *rv1d_arr, *rv2d_arr)
             diag_temp.append(out[1:])
             out = out[0]
 
@@ -292,7 +292,7 @@ def generate_rv_params(params_to_fit, params_type, rvus_forfit, n_samp, dtypesiz
     """
     params_to_fit = np.array(params_to_fit)
     dist_set = set(params_type)
-    dist_set.remove('nonrv')
+    dist_set.remove('deterministic')
     dist_set = list(dist_set)
     rvs_to_fit = cp.zeros((len(dist_set), n_samp), dtype=dtypesize)
     

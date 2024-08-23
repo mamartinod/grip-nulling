@@ -349,7 +349,7 @@ def plot_parameter_space_2d(param_map, mapx, mapy, mapz, arg_axes, stepx, stepy,
     # The z-axis can be given in an iterable or as an integer
     try:
         argz = arg_axes[0]
-    except TypeError:
+    except:
         argz = arg_axes
     
     # If the map has more than 3 dimensions, we slice along the extra axes

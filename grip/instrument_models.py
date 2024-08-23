@@ -17,16 +17,18 @@ try:
 except ModuleNotFoundError:
     import numpy as cp
 
-def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, zeta_minus_B,\
-                zeta_plus_A, zeta_plus_B, opd, injA, injB,\
+def glint_model(na, opd, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, zeta_minus_B,\
+                zeta_plus_A, zeta_plus_B, injA, injB,\
                 dark_null, dark_antinull):
     """
     Model of the GLINT instrument (version of the instrument 2019 - 2021).
 
     Parameters
     ----------
-    na : float
-        Self-calibrated null depth.
+    na : list-like
+        List containing the deterministic value astrophysical null depth
+    opd : list-like
+        Sequence of OPD. If single value, must be in an array of shape (1,1).   
     wavelength : 1d-array
         Wavelength in the same unit as the OPD.
     wl_idx : int
@@ -43,8 +45,6 @@ def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, 
         Splitting ratio between the anti-null output and the photometric output of beam A.
     zeta_plus_B : 1d-array
         Splitting ratio between the anti-null output and the photometric output of beam B.
-    opd : 1d-array
-        Sequence of OPD.
     injA : 1d-array
         Sequence of injection of beam A.
     injB : 1d-array
@@ -64,6 +64,9 @@ def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, 
         Sequence of simulated anti-null output.
 
     """
+    na = na[0]
+    opd = opd[0]
+
     visibility = (1 - na) / (1 + na)
     wave_number = 1./wavelength
     sine = cp.sin(2*np.pi*wave_number*(opd))
@@ -90,8 +93,8 @@ def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, 
     null = Iminus / Iplus
     return null, Iminus, Iplus
         
-def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias, 
-               opd, IA, IB, thermal_bckg, sigma_eps):
+def lbti_model(na, opd, wavelength, wl_idx, 
+               spec_chan_width, phase_bias, IA, IB, thermal_bckg, sigma_eps):
     """
     Compute the null depth.
     
@@ -100,8 +103,10 @@ def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias,
 
     Parameters
     ----------
-    na : float
-        Self-calibrated null depth.
+    na : list-like
+        List containing the deterministic value astrophysical null depth
+    opd : list-like
+        Sequence of OPD. If single value, must be in an array of shape (1,1).        
     wavelength : 1d-array
         Wavelength in the same unit as the OPD.
     wl_idx : int
@@ -110,8 +115,6 @@ def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias,
         Width of a spectral channel, in the same unit as ``wavelength``.
     phase_bias : float
         Constant term of the phase, in radians.
-    opd : 1d-array
-        Sequence of OPD. If single value, must be in an array of shape (1,).
     IA : 1d-array
         Sequence of intensity of beam 1 contributing to the interferences. If single value, must be in an array of shape (1,).
     IB : 1d-array
@@ -131,6 +134,10 @@ def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias,
         Sequence of simulated constructive interference. If cupy is installed, this is a cupy (GPU hosted) array
 
     """
+    
+    na = na[0]
+    opd = opd[0]
+
     visibility = (1 - na) / (1 + na)
     wave_number = 1./wavelength
     
@@ -157,7 +164,7 @@ def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias,
 
     return null, Iminus, Iplus
 
-def test_multiargs(nonrv_params_to_fit, rv_fit, wavelength, wl_idx, 
+def test_multiargs(deterministic_params_to_fit, rv_fit, wavelength, wl_idx, 
                 spec_chan_width, phase_bias, IA, IB, thermal_bckg):
     """
     Compute the null depth.
@@ -173,7 +180,7 @@ def test_multiargs(nonrv_params_to_fit, rv_fit, wavelength, wl_idx,
 
     Parameters
     ----------
-    nonrv_params_to_fit : list-like
+    deterministic_params_to_fit : list-like
         List of the parameters to fit that are not parameters of statistical distributions.
     rv_fit : list-like
         List of random values generated from distributions which parameters are to fit.
@@ -206,7 +213,7 @@ def test_multiargs(nonrv_params_to_fit, rv_fit, wavelength, wl_idx,
         Sequence of simulated constructive interference. If cupy is installed, this is a cupy (GPU hosted) array
 
     """    
-    na, ir = nonrv_params_to_fit
+    na, ir = deterministic_params_to_fit
     opd = rv_fit[0]
     sigma_eps = rv_fit[1]
     

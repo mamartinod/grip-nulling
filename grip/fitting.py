@@ -524,7 +524,6 @@ def mcmc(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs=
 
     return samples, flat_samples, sampler, all_samples
 
-
 def calculate_chi2(params, data, func_model, *args, **kwargs):
     """
     DEPRECATED
@@ -760,8 +759,8 @@ def check_init_guess(guess, bound):
         guess > np.array(bound)[:, 1])
     return check
 
-def basin_hoppin_values(mu0, sig0, na0, bounds_mu, bounds_sig,
-                        bounds_na):
+
+def basin_hoppin_values(init_guess, std_guess, bounds_guess):
     """
     Create several initial guesses.
 
@@ -769,56 +768,38 @@ def basin_hoppin_values(mu0, sig0, na0, bounds_mu, bounds_sig,
     to do.
     The generation of these values are done with a normal distribution.
 
+    The guesses are withdrawn from a Normal distribution of location factor `init_guess`
+    and scale factor `std_guess`.
+
     Parameters
     ----------
-    mu0 : float
-        Instrumental OPD around which random initial guesses are created.
-    sig0 : float
-        Instrumental OPD around which random initial guesses are created.
-    na0 : float
-        Null depth of the source around which random initial guesses are created.
-    bounds_mu : 2-tuple
-        Lower and upper bounds between which the random values of ``mu_opd`` must be.
-    bounds_sig : 2-tuple
-        Lower and upper bounds between which the random values of ``sig_opd`` must be.
-    bounds_na : 2-tuple
-        Lower and upper bounds between which the random values of ``na`` must be.
+    init_guess : list-like
+        List of free parameters to fit. The shape must be (N,) or equivalent, N being the number of parameters.
+    std_guess : list-like
+        List of scale factors to generate guesses from Normal distributions. The shape must be (N,) or equivalent, N being the number of parameters.
+    bounds_guess : list of tuple
+        Minimum and maximum values the guesses can be. The shape must be (N,2) or equivalent, N being the number of parameters
 
     Returns
     -------
-    out: 3-tuple
-        New initial guess for ``mu_opd``,
-        new initial guess for ``sig_opd``,
-        new initial guess for ``na``
+    new_init_guess : array-like
+        New set of guess. Array of shape (N,), with N the number of parameters.
 
     """
+
     print('Random withdrawing of init guesses')
 
-    for _ in range(1000):
-        mu_opd = np.random.normal(mu0, 50)
-        if mu_opd > bounds_mu[0] and mu_opd < bounds_mu[1]:
-            break
-        if _ == 1000-1:
-            print('mu_opd: no new guess, take initial one')
-            mu_opd = mu0
-
-    for _ in range(1000):
-        sig_opd = abs(np.random.normal(sig0, 50.))
-        if sig_opd > bounds_sig[0] and sig_opd < bounds_sig[1]:
-            break
-        if _ == 1000-1:
-            print('sig opd: no new guess, take initial one')
-            sig_opd = sig0
-
-    for _ in range(1000):
-        na = np.random.normal(na0, 0.03)
-        if na > bounds_na[0] and na < bounds_na[1]:
-            break
-        if _ == 1000-1:
-            print('na: no new guess, take initial one')
-            na = na0
-
+    new_init_guess = []
+    for i in range(len(init_guess)):
+        for _ in range(1000):
+            guess = np.random.normal(init_guess[i], std_guess[i])
+            if guess > bounds_guess[i][0] and guess < bounds_guess[i][1]:
+                break
+            if _ == 1000-1:
+                print('Index '+str(i)+' : No new guess for index take initial one')
+                guess = init_guess[i]
+        new_init_guess.append(guess)
+    
+    new_init_guess = np.array(new_init_guess)
     print('Random drawing done')
-#    np.random.set_state(orig_seed)
-    out = (mu_opd, sig_opd, na)
-    return out
+    return new_init_guess
