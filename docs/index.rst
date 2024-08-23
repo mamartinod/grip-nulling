@@ -24,6 +24,8 @@ GRIP currently features several optimizing strategy:
 
 It can work on GPU thanks to the cupy library but it does not handle Jax yet.
 
+GRIP is open-source and can be found on `Github <https://github.com/mamartinod/grip>`_.
+
 Dependencies
 ------------
 - numpy >= 1.26.2
@@ -41,7 +43,8 @@ Installation
 
 Tutorials
 ---------
-See the main page of the project on Github.
+Tutorials are available on the `Github <https://github.com/mamartinod/grip>`_ page of the project.
+
 
 Future work
 -----------
