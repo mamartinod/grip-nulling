@@ -11,6 +11,8 @@ Over the year, several nulling self-calibration pipelines have been written. Wit
 # Documentation
 Find the documentation [here](https://mamartinod.github.io/grip/).
 
+For the documentation of specific releases, see the [ReadTheDocs](https://grip.readthedocs.io/en/latest/).
+
 # Tutorials
 1. [How to get the histograms of the data and the models](/tutorials/tuto1_get_histo_and_display.ipynb)
 2. [How to scan the parameter space with a binomial likelihood estimator](/tutorials/tuto2_explore_parameter_space.ipynb)
