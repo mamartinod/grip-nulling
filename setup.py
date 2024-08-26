@@ -3,8 +3,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='grip',
-    version='1.4.0',
+    name='grip-nulling',
+	 version='1.4.0',
     author='M.-A. Martinod',
     description='Self-calibration data reduction tools for nulling interferometry',
     packages=find_packages(),
