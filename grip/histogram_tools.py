@@ -57,7 +57,7 @@ def create_histogram_model(params_to_fit, xbins, params_type, wl_scale0, instrum
         For wavelength-dependant quantity, 1st axis = wavelength.
     \**kwargs : keywords
         ``n_samp_per_loop`` (int): number of samples for the MC simulation per loop.
-        
+
         ``nloop`` (int): number of loops
 
     Returns
