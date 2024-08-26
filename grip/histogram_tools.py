@@ -7,7 +7,7 @@ and generate randon values from customed distributions, both on GPU or CPU.
 import numpy as np
 try:
     import cupy as cp
-    from cupyx.scipy.special import ndtr
+    from cupyx.scipy.special import ndtr, pdtr
     onGpu = True
 except ModuleNotFoundError:
     import numpy as cp
@@ -23,45 +23,89 @@ def counted_calls(f):
     count_wrapper.count = 0
     return count_wrapper
 
+       
 @counted_calls
-def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, instrument_args, rvu_forfit, cdfs, rvus, **kwargs):
+def create_histogram_model(params_to_fit, xbins, params_type, wl_scale0, instrument_model, instrument_args, rvus_forfit, cdfs, rvus, **kwargs):
     """
+    .. _create-histogram-model:
+
     Monte-Carlo simulator of the instrument model to give a histogram.
     
     To avoid memory overflow, the total number of samples can be chunked into smaller parts.
     The resulting histogram is the same if the simulation is made with the total number of samples
-    in one go.
+    in one go.    
 
     Parameters
     ----------
-    xbins : 2D array
-        1st axis = wavelength.
     params_to_fit : tuple-like
         List of the parameters to fit.
+    params_type : list
+        Labels of the parameters to fit, see the notes for more information.
+    xbins : 2D array
+        1st axis = wavelength.
     wl_scale0 : 1D array
         Wavelength scale.
     instrument_model : function
         Function simulating the instrument.
     instrument_args : tuple, must contain same type of data (all float or all array of the same shape)
         List of arguments to pass to ``instrument_model`` which are not fitted.
+    rvus_forfit : dic
+        Contains the uniformly distributed values to generate random values following distributions which parameters are to fit.
     cdfs : tuple. First put CDF of quantities which does not depend on the wavelength.
         For wavelength-dependant quantity, 1st axis = wavelength.
     rvus : tuple. First put CDF of quantities which does not depend on the wavelength.
         For wavelength-dependant quantity, 1st axis = wavelength.
     \**kwargs : keywords
-        ``n_samp_per_loop`` (int): number of samples for the MC simulation per loop.\\
+        ``n_samp_per_loop`` (int): number of samples for the MC simulation per loop.
+
         ``nloop`` (int): number of loops
 
     Returns
     -------
-    1d-array
+    accum : 1d-array
         Model of the histogram.
+    diag : list
+        Diagnostic data from the instrument model.
+    diag_rv_1d : list
+        Diagnostic data that are random values generated from the noise sources that are spectrally independant.
+    diag_rv_2d : list
+        Diagnostic data that are random values generated from the noise sources that are spectrally dependant.
+
+    Notes
+    -----
+    This function can handle model with an arbitrary number of parameters, that can be parameters of a distribution or something else.
+    
+    The label system carried by `params_type` allows to identified the parameters that are not related to a distribution, 
+    that are related to the same distribution (e.g. a Normal distribution needs 2 parameters, a Poisson needs one).
+    
+    In addition, when it comes to generate values from a distribution which parameters are to find, one may want some reproductibility.
+    The parameter `rvus_forfit` embeds sequence of uniformly distributed values in a dictionary. 
+    The keys of the dictionary must match the labels in `params_type`. If a key is not found, a new sequence is generated.
+    For a key, the value can be `None` if no reproductibility is expected from this distribution.
+    
+    For example, let's assume a model that take the parameters: null depth, correcting factor, :math:`\mu` and :math:`\sigma` of 2 normal distributions
+    and the :math:`\lambda` of a Poisson distribution.
+
+    We have :
+        - ``params_to_fit = [null depth, correcting factor, :math:`\mu_1` and :math:`\sigma_1`, :math:`\mu_1` and :math:\sigma_1`, :math:`\lambda`]``
+        - ``params_type = ['deterministic', 'deterministic', 'normal1', 'normal1', 'normal2', 'normal2', 'poisson']``
+        - ``rvus_forfit = {'normal1':None, 'normal2':array([0.27259743, 0.89770258, 0.72093494]), 'poisson':None}``
+    
+    The function will identified their are 2 *constant* parameters, 3 distributions to model with respectively 2, 2 and 1 parameters.
+    Among these 3 distributions, only one is reproductible if given the same set of values between two calls of the function ``create_histogram_model``.
+    
+    Implemented distributions and their associated keywords are:
+        - Normal distribution with keyword 'normal[...]' pattern, compatible with frozen uniform sequence
+        - Poisson distribution with keyword 'poisson[...]' pattern, not compatible with frozen uniform sequence
 
     """
+
     dtypesize = cp.float32
     diag = []
     diag_rv_1d = []
     diag_rv_2d = []
+    
+    params_type = np.array(params_type)
 
     # """
     # Set some verbose to track the behaviour of the fitting algorithm
@@ -82,14 +126,7 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     else:
         normed = True
 
-    # """
-    # Unpack the parameters to fit.
-    # The astrophysical null or visibility MUST be the first argument.
-    # The two others MUST be the location and scale parameter of a normal distribution.
-    # """
-    na = params_to_fit[0]
-    mu = params_to_fit[1]
-    sig = params_to_fit[2]
+
 
     # """
     # Set the parameters of the MC part of the creation of the histogram
@@ -122,10 +159,15 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
     idx_1d_cdfs = np.where(cdfs_ndim == 1)[0] # e.g. injection or phase fluctuations
     idx_2d_cdfs = np.where(cdfs_ndim == 2)[0] # e.g. RON per spectral channel
 
-    rv_forfit_axis = cp.linspace(mu - 6 * sig, mu + 6 * sig, 1001, dtype=dtypesize)
-    rv_forfit_cdf = ndtr((rv_forfit_axis - mu) / sig)
-    rv_forfit = rv_generator(rv_forfit_axis, rv_forfit_cdf, n_samp_per_loop, rvu_forfit)
-    rv_forfit = rv_forfit.astype(dtypesize)
+    # """
+    # Unpack the parameters to fit that are not parameters of statistical distributions.
+    # """
+    deterministic_params_to_fit = [elt for elt, elt2 in zip(params_to_fit, params_type) if elt2=='deterministic']
+
+    # """
+    # Generate random values from distributions which parameters are to be estimated.
+    # """
+    rvs_to_fit = generate_rv_params(params_to_fit, params_type, rvus_forfit, n_samp_per_loop, dtypesize)
 
     # """
     # Number of samples to simulate is high and the memory is low so we iterate
@@ -139,14 +181,13 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
         # """
         # Generation of the random values of the quantities independant from spectral channels
         # """
-        rv1d_arr = cp.zeros((len(idx_1d_cdfs)+1, n_samp_per_loop), dtype=dtypesize)
-        rv1d_arr[0] = rv_forfit
+        rv1d_arr = cp.zeros((len(idx_1d_cdfs), n_samp_per_loop), dtype=dtypesize)
         # Generate random values from the 1D-cdfs
         for i in range(len(idx_1d_cdfs)):
             idx = idx_1d_cdfs[i]
             rv = rv_generator(cdfs[idx][0], cdfs[idx][1], n_samp_per_loop, rvus[idx])
             rv = rv.astype(dtypesize)
-            rv1d_arr[i+1] = rv
+            rv1d_arr[i] = rv
         
         diag_rv_1d_temp.append(rv1d_arr)
 
@@ -166,7 +207,7 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
             # """
             # Generate a signal delivered by the instrument given the input parameters
             # """
-            out = instrument_model(na, wl_scale0[k], k, *instrument_args, *rv1d_arr, *rv2d_arr)
+            out = instrument_model(deterministic_params_to_fit, rvs_to_fit, wl_scale0[k], k, *instrument_args, *rv1d_arr, *rv2d_arr)
             diag_temp.append(out[1:])
             out = out[0]
 
@@ -208,9 +249,80 @@ def create_histogram_model(params_to_fit, xbins, wl_scale0, instrument_model, in
 
     if onGpu:
         accum = cp.asnumpy(accum)
+        
+    accum = accum.ravel()
 
-    return accum.ravel(), diag, diag_rv_1d, diag_rv_2d
+    return accum, diag, diag_rv_1d, diag_rv_2d
 
+def generate_rv_params(params_to_fit, params_type, rvus_forfit, n_samp, dtypesize):
+    """
+    Generate random values from distribution which parameters are to be fit.
+    An arbitrary number of distributions can be used.
+    
+    This function returns random values from Normal and Poisson distributions.
+
+    Parameters
+    ----------
+    params_to_fit : list
+        List of all the parameters to fit.
+    params_type : list
+        List of the natures of the distribution from which generate random values. It must have the same length as `params_to_fit`
+    rvus_forfit : dict
+        Dictionary of sequence of uniform distributions that can be use to generate random values in a reproducible way. The keywords must be the same as the ones in `params_type`.
+    n_samp : int
+        Number of samples to generate per distribution.
+    dtypesize : numpy or cupy digital size object
+        Digital size of the array containing the random values (e.g. ``float``, ``int``, ``cp.float32``...).
+
+    Raises
+    ------
+    NameError
+        The distribution in `params_type` is not recognised.
+
+    Returns
+    -------
+    rvs_to_fit : array
+        Array containing all the random values from the distributions which parameters are to determine.
+        A row contains the sequence from one distribution.
+        
+    See also
+    --------
+    :ref:`create_histogram_model <create-histogram-model>`: the Notes detail the use of ``params_to_fit`, ``params_type`` and ``rvus_forfit``.
+
+    """
+    params_to_fit = np.array(params_to_fit)
+    dist_set = set(params_type)
+    dist_set.remove('deterministic')
+    dist_set = list(dist_set)
+    rvs_to_fit = cp.zeros((len(dist_set), n_samp), dtype=dtypesize)
+    
+    for k in range(len(dist_set)):
+        selected_idx = np.array([i for i,x in enumerate(params_type) if x==dist_set[k]])
+        selected_dist = params_type[selected_idx]
+        selected_params = params_to_fit[selected_idx]
+        
+        try:
+            selected_rvu = rvus_forfit[dist_set[k]] # Read a dictionary
+        except KeyError:
+            selected_rvu = None
+        
+        if 'normal' in selected_dist[0]:
+            mu, sig = selected_params
+            axis = cp.linspace(mu - 6 * sig, mu + 6 * sig, 1001, dtype=dtypesize)
+            cdf = ndtr((axis - mu) / sig)
+            rv_forfit = rv_generator(axis, cdf, n_samp, selected_rvu)
+            rv_forfit = rv_forfit.astype(dtypesize)
+
+        elif 'poisson' in selected_dist[0]:
+            lam = selected_params[0]
+            rv_forfit = cp.random.poisson(lam, n_samp, dtype=dtypesize)
+        else:
+            raise NameError("Distribution not recognised. Only use among: 'normal', 'poisson'")
+            
+        rvs_to_fit[k] = rv_forfit
+        
+        return rvs_to_fit
+    
 
 def compute_data_histogram(data_null, bin_bounds, wl_scale, **kwargs):
     """
@@ -789,7 +901,3 @@ def getErrorBinomNorm(pdf, data_size, normed):
         pdf_err = (pdf * (1 - pdf/data_size))**0.5  # binom-norm
     pdf_err[pdf_err == 0] = pdf_err[pdf_err != 0].min()
     return pdf_err
-
-
-
-

@@ -272,12 +272,14 @@ def plot_diag_nonspectral_data(data_xy, labels, save_path, \
     if save_fig:
         plt.savefig(save_path+save_name+'.png', dpi=150) 
 
-def plot_parameter_space_2d(param_map, mapx, mapy, mapz, argz, stepx, stepy,
+
+def plot_parameter_space_2d(param_map, mapx, mapy, mapz, arg_axes, stepx, stepy,
                          labelx, labely, labelz, text, save_path,
                          x_id, y_id, basin_hopping_count,
                          wl_min, wl_max, save, valminmax=None):
     """
-    Plot 3-parameter spaces with heatmaps.
+    Plot n-parameter spaces with heatmaps.
+    It can only display along with the first 3 axes, all extra ones are sliced.
     The 3rd axis is displayed along several subplots of the two other axes.
     The maximum number of subplot is 10, and a single figure instance is displayed.
     The subplots display the +/- 5 values around the value indexed by ``argz``.
@@ -285,7 +287,7 @@ def plot_parameter_space_2d(param_map, mapx, mapy, mapz, argz, stepx, stepy,
 
     Parameters
     ----------
-    param_map : 3d-array
+    param_map : nd-array
         Map of the parameter space (chi2, likelihood...).
     mapx : 1d-array
         Scale of the parameter to display along the x-axis of the heatmap. 
@@ -293,8 +295,10 @@ def plot_parameter_space_2d(param_map, mapx, mapy, mapz, argz, stepx, stepy,
         Scale of the parameter to display along the y-axis of the heatmap.
     mapz : 1d-array
         Scale of the parameter to display along the z-axis (subplot) of the heatmap..
-    argminz : int
-        Index of the extremum of the heat map to center the display of the z-axis.
+    arg_axes : int or iterable
+        Index of the remaining axes that are sliced. If it is an interger, 
+        it is the extremum of the heat map to center the display of the z-axis, and the map must have 3 axes. 
+        If it is an iterable, the first element must be the slice along the z-axis, ad the map must have 4 axes or more.
     stepx : float
         Step size of the x-axis scale.
     stepy : float
@@ -329,6 +333,10 @@ def plot_parameter_space_2d(param_map, mapx, mapy, mapz, argz, stepx, stepy,
     Returns
     -------
     None.
+    
+    Notes
+    -----
+    For heatmap of 2 axes, an artificial 3rd one must be created to use this function.
 
     """
 
@@ -337,6 +345,17 @@ def plot_parameter_space_2d(param_map, mapx, mapy, mapz, argz, stepx, stepy,
         valmax = np.nanmax(param_map[~np.isinf(param_map)])
     else:
         valmin, valmax = valminmax
+        
+    # The z-axis can be given in an iterable or as an integer
+    try:
+        argz = arg_axes[0]
+    except:
+        argz = arg_axes
+    
+    # If the map has more than 3 dimensions, we slice along the extra axes
+    if param_map.ndim > 3:
+        param_map = param_map[:,:,:,*arg_axes[1:]]
+
 
     plt.figure(figsize=(19.20, 10.80))
     if mapz.size > 10:

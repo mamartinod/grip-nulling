@@ -17,16 +17,18 @@ try:
 except ModuleNotFoundError:
     import numpy as cp
 
-def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, zeta_minus_B,\
-                zeta_plus_A, zeta_plus_B, opd, injA, injB,\
+def glint_model(na, opd, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, zeta_minus_B,\
+                zeta_plus_A, zeta_plus_B, injA, injB,\
                 dark_null, dark_antinull):
     """
     Model of the GLINT instrument (version of the instrument 2019 - 2021).
 
     Parameters
     ----------
-    na : float
-        Self-calibrated null depth.
+    na : list-like
+        List containing the deterministic value astrophysical null depth
+    opd : list-like
+        Sequence of OPD. If single value, must be in an array of shape (1,1).   
     wavelength : 1d-array
         Wavelength in the same unit as the OPD.
     wl_idx : int
@@ -43,8 +45,6 @@ def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, 
         Splitting ratio between the anti-null output and the photometric output of beam A.
     zeta_plus_B : 1d-array
         Splitting ratio between the anti-null output and the photometric output of beam B.
-    opd : 1d-array
-        Sequence of OPD.
     injA : 1d-array
         Sequence of injection of beam A.
     injB : 1d-array
@@ -64,6 +64,9 @@ def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, 
         Sequence of simulated anti-null output.
 
     """
+    na = na[0]
+    opd = opd[0]
+
     visibility = (1 - na) / (1 + na)
     wave_number = 1./wavelength
     sine = cp.sin(2*np.pi*wave_number*(opd))
@@ -90,8 +93,8 @@ def glint_model(na, wavelength, wl_idx, spec_chan_width, spectra, zeta_minus_A, 
     null = Iminus / Iplus
     return null, Iminus, Iplus
         
-def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias, 
-               opd, IA, IB, thermal_bckg, sigma_eps):
+def lbti_model(na, opd, wavelength, wl_idx, 
+               spec_chan_width, phase_bias, IA, IB, thermal_bckg, sigma_eps):
     """
     Compute the null depth.
     
@@ -100,8 +103,87 @@ def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias,
 
     Parameters
     ----------
-    na : float
-        Self-calibrated null depth.
+    na : list-like
+        List containing the deterministic value astrophysical null depth
+    opd : list-like
+        Sequence of OPD. If single value, must be in an array of shape (1,1).        
+    wavelength : 1d-array
+        Wavelength in the same unit as the OPD.
+    wl_idx : int
+        wavelength cursor.
+    spec_chan_width : float
+        Width of a spectral channel, in the same unit as ``wavelength``.
+    phase_bias : float
+        Constant term of the phase, in radians.
+    IA : 1d-array
+        Sequence of intensity of beam 1 contributing to the interferences. If single value, must be in an array of shape (1,).
+    IB : 1d-array
+        Sequence of intensity of beam 2 contributing to the interferences. If single value, must be in an array of shape (1,).
+    thermal_bckg : 1d-array
+        Sequence of therma background. If single value, must be in an array of shape (1,).
+    sigma_eps : 1d-array
+        Sequence of intra-frame phase fluctuations. If single value, must be in an array of shape (1,).
+
+    Returns
+    -------
+    null : 1d-array
+        Sequence of simulated null depth. If cupy is installed, this is a cupy (GPU hosted) array
+    Iminus : 1d-array
+        Sequence of simulated destructive interference. If cupy is installed, this is a cupy (GPU hosted) array
+    Iplus : 1d-array
+        Sequence of simulated constructive interference. If cupy is installed, this is a cupy (GPU hosted) array
+
+    """
+    
+    na = na[0]
+    opd = opd[0]
+
+    visibility = (1 - na) / (1 + na)
+    wave_number = 1./wavelength
+    
+    thermal_bckg = cp.array([thermal_bckg], dtype=cp.float32).reshape(thermal_bckg.shape)
+    IA = cp.array([IA]).reshape(IA.shape)
+    IB = cp.array([IB]).reshape(IB.shape)
+    
+    cos_arg = 2 * np.pi * wave_number * opd + phase_bias
+    cos_arg = cp.array([cos_arg], dtype=cp.float32).reshape(cos_arg.shape)
+    cosine = cp.cos(cos_arg)
+    delta_wave_number = spec_chan_width / wavelength**2
+    arg = np.pi*delta_wave_number * opd
+    arg = cp.array([arg], dtype=cp.float32).reshape(arg.shape)
+    sinc = cp.sin(arg) / arg
+
+    cosine = cosine * sinc
+
+    blurring = 1 - 0.5*sigma_eps**2 + 0.125 * sigma_eps**4
+    blurring = cp.array([blurring], dtype=cp.float32).reshape(blurring.shape)
+    Iminus = IA + IB + 2 * cp.sqrt(IA * IB) * visibility * blurring * cosine
+    Iplus = IA + IB + 2 * cp.sqrt(IA * IB)
+    Iminus = Iminus + thermal_bckg
+    null = Iminus / Iplus
+
+    return null, Iminus, Iplus
+
+def test_multiargs(deterministic_params_to_fit, rv_fit, wavelength, wl_idx, 
+                spec_chan_width, phase_bias, IA, IB, thermal_bckg):
+    """
+    Compute the null depth.
+    
+    Compute the null depth from generated random values of photometries, detector noise and OPD. 
+    The estimator is the ratio of the null over the antinull fluxes.
+    
+    This version needs 6 parameters to fit: Null depth, mu and sigma OPD, factor correction of the thermal background `ir`,
+    mu and sigma of the fringe blurring `sigma_eps`.
+    
+    This model is used to test the ability of GRIP to handle models with more than 3 parameters and parameters
+    of different natures (of the instrument model or governing the noise in the model).
+
+    Parameters
+    ----------
+    deterministic_params_to_fit : list-like
+        List of the parameters to fit that are not parameters of statistical distributions.
+    rv_fit : list-like
+        List of random values generated from distributions which parameters are to fit.
     wavelength : 1d-array
         Wavelength in the same unit as the OPD.
     wl_idx : int
@@ -130,7 +212,11 @@ def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias,
     Iplus : 1d-array
         Sequence of simulated constructive interference. If cupy is installed, this is a cupy (GPU hosted) array
 
-    """
+    """    
+    na, ir = deterministic_params_to_fit
+    opd = rv_fit[0]
+    sigma_eps = rv_fit[1]
+    
     visibility = (1 - na) / (1 + na)
     wave_number = 1./wavelength
     
@@ -152,7 +238,7 @@ def lbti_model(na, wavelength, wl_idx, spec_chan_width, phase_bias,
     blurring = cp.array([blurring], dtype=cp.float32).reshape(blurring.shape)
     Iminus = IA + IB + 2 * cp.sqrt(IA * IB) * visibility * blurring * cosine
     Iplus = IA + IB + 2 * cp.sqrt(IA * IB)
-    Iminus = Iminus + thermal_bckg
+    Iminus = Iminus + thermal_bckg * ir
     null = Iminus / Iplus
 
-    return null, Iminus, Iplus
+    return null, Iminus, Iplus    
