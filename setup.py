@@ -7,7 +7,7 @@ setup(
 	 version='1.4.0',
     author='M.-A. Martinod',
     description='Self-calibration data reduction tools for nulling interferometry',
-	 long_description='Check https://github.com/mamartinod/grip for more information',
+	 long_description='GRIP is a novel data reduction methods providing self-calibrated methods for nulling interferometry. Check https://github.com/mamartinod/grip for more information',
     packages=find_packages(),
     install_requires=[
 		'numpy>=1.26.2',
