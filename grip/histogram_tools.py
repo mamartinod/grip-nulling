@@ -87,7 +87,7 @@ def create_histogram_model(params_to_fit, xbins, params_type, wl_scale0, instrum
     and the :math:`\lambda` of a Poisson distribution.
 
     We have :
-        - ``params_to_fit = [null depth, correcting factor, :math:`\mu_1` and :math:`\sigma_1`, :math:`\mu_1` and :math:\sigma_1`, :math:`\lambda`]``
+        - params_to_fit = [null depth, correcting factor, :math:`\mu_1` and :math:`\sigma_1`, :math:`\mu_1` and :math:`\sigma_1`, :math:`\lambda`]
         - ``params_type = ['deterministic', 'deterministic', 'normal1', 'normal1', 'normal2', 'normal2', 'poisson']``
         - ``rvus_forfit = {'normal1':None, 'normal2':array([0.27259743, 0.89770258, 0.72093494]), 'poisson':None}``
     

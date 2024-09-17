@@ -3,11 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+==================
 GRIP documentation
 ==================
 
 What is GRIP?
--------------
+=============
 
 GRIP (Generic data Reduction for nulling Interferometry Package) is a toolbox for reducing nulling data
 with the nulling self-calibration method (NSC).
@@ -27,7 +28,7 @@ It can work on GPU thanks to the cupy library but it does not handle Jax yet.
 GRIP is open-source and can be found on `Github <https://github.com/mamartinod/grip>`_.
 
 Dependencies
-------------
+============
 - numpy >= 1.26.2
 - scipy >= 1.11.4
 - matplotlib >= 3.6.3
@@ -36,18 +37,34 @@ Dependencies
 - cupy >= 11.5.0 (optional and not downloaded during the installation)
 
 Installation
-------------
+============
+
+From PIP
+--------
+Use the command ``pip install grip-nulling``.
+
+To uninstall: ``pip uninstall grip-nulling``.
+
+From the source
+---------------
 1. Clone or download the repo.
 2. Open the folder then a terminal
-3. Use the command ``pip install .`` or ``conda install .``.
+3. Use the command ``pip install .`` or ``conda install .``
+
+To uninstall:
+
+1. Open a terminal and the environment
+2. Do not locate yourself in the folder of the package or the parent
+3. Type `pip uninstall grip`
+4. Delete the folder `grip`
 
 Tutorials
----------
+=========
 Tutorials are available on the `Github <https://github.com/mamartinod/grip>`_ page of the project.
 
 
 Future work
------------
+===========
 Contributions are welcome.
 
 - Build a double-Bracewell model
