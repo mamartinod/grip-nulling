@@ -41,18 +41,21 @@ html_theme_options = {
 pygments_style = 'sphinx'
 
 autodoc_mock_imports = [
-'numpy',
-'scipy',
-'matplotlib',
-'h5py',
-'emcee',
-'itertools',
-'timeit',
+'astropy',
+'corner',
 'cupy',
 'cupyx',
-'grip',
+'emcee',
 'functools',
+'grip',
+'h5py',
+'itertools',
+'lampe',
+'matplotlib',
 'numdifftools',
-'astropy'
+'numpy',
+'scipy',
+'timeit',
+'torch',
 ]
 
