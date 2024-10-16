@@ -29,7 +29,9 @@ For the documentation of specific releases, see the [ReadTheDocs](https://grip.r
 - emcee >= 3.1.4
 - numdifftools >= 0.9.41
 - astropy >= 5.2.1
-- cupy >= 11.5.0 (optional and has to be manually installed besides GRIP)
+- cupy >= 11.5.0 (optional and not downloaded during the installation)
+- lampe >= 0.8.2 (optional and not downloaded during the installation)
+- pytorch >= 2.1.2 (optional and not downloaded during the installation)
 
 ## From PIP
 1. Use the command ``pip install grip-nulling``
@@ -47,6 +49,15 @@ To uninstall:
 2. Do not locate yourself in the folder of the package or the parent
 3. Type `pip uninstall grip`
 4. Delete the folder `grip`
+
+# GPU powering
+If you have a GPU, greatly boost the performance of GRIP by using `Cupy <https://cupy.dev/>`_.
+
+# Using Neural Posterior Estimation
+To use the Neural Posterior Estimation technique, the libraries `LAMPE <https://github.com/probabilists/lampe>`_ 
+and `PyTorch <https://pytorch.org/>`_ must be installed separately.
+
+GPU is not necessary to use the NPE feature of GRIP.
 
 # Acknowledgements
 GRIP is a development carried out in the context of the [SCIFY project](http://denis-defrere.com/scify.php). SCIFY has received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program (grant agreement No 8660).
