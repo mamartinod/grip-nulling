@@ -57,9 +57,9 @@ From the source
 To uninstall:
 
 1. Open a terminal and the environment
-2. Do not locate yourself in the folder of the package or the parent
-3. Type `pip uninstall grip`
-4. Delete the folder `grip`
+2. Do not locate yourself in the directory of the package or the parent
+3. Type ``pip uninstall grip``
+4. Delete the directory ``grip``
 
 GPU powering
 ============
