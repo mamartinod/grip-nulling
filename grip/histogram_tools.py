@@ -39,10 +39,10 @@ def create_histogram_model(params_to_fit, xbins, params_type, wl_scale0, instrum
     ----------
     params_to_fit : tuple-like
         List of the parameters to fit.
-    params_type : list
-        Labels of the parameters to fit, see the notes for more information.
     xbins : 2D array
-        1st axis = wavelength.
+        1st axis = wavelength
+    params_type : list
+        Labels of the parameters to fit, see the notes for more information.        
     wl_scale0 : 1D array
         Wavelength scale.
     instrument_model : function
@@ -350,6 +350,8 @@ def compute_data_histogram(data_null, bin_bounds, wl_scale, **kwargs):
     null_pdf_err : TYPE
         Error on the histogram frequency per spectral channel, assuming the \
             number of elements per bin follows a binomial distribution.
+    sz : int
+        Number of bins
 
     """
 
