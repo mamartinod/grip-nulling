@@ -50,8 +50,8 @@ To uninstall: ``pip uninstall grip-nulling``.
 
 From the source
 ---------------
-1. Clone or download the repo.
-2. Open the folder then a terminal
+1. Clone, download the repo or check one of the releases.
+2. Open the directory then a terminal
 3. Use the command ``pip install .`` or ``conda install .``
 
 To uninstall:

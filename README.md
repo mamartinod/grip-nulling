@@ -39,16 +39,16 @@ For the documentation of specific releases, see the [ReadTheDocs](https://grip.r
 To uninstall: ``pip uninstall grip-nulling``
 
 ## From the repo
-1. Clone or download the repo.
-2. Open the folder then a terminal
-3. Use the command ``pip install .``
+1. Clone, download the repo or check one of the releases.
+2. Open the directory then a terminal
+3. Use the command ``pip install .`` or ``conda install .``
 4. Visit the documentation and its tutorial to discover more about the library
 
 To uninstall:
 1. Open a terminal and the environment
 2. Do not locate yourself in the folder of the package or the parent
 3. Type `pip uninstall grip`
-4. Delete the folder `grip`
+4. Delete the directory `grip`
 
 # GPU powering
 If you have a GPU, greatly boost the performance of GRIP by using `Cupy <https://cupy.dev/>`_.
