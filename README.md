@@ -39,8 +39,8 @@ To uninstall: ``pip uninstall grip-nulling``
 ## From the repo
 1. Clone or download the repo.
 2. Open the folder then a terminal
-3. Use the command ``pip install .``.
-4. Visit the documentation and its tutorial to discover more about the library.
+3. Use the command ``pip install .``
+4. Visit the documentation and its tutorial to discover more about the library
 
 To uninstall:
 1. Open a terminal and the environment
