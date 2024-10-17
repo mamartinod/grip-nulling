@@ -19,6 +19,7 @@ For the documentation of specific releases, see the [ReadTheDocs](https://grip.r
 3. [How to perform a fit with a binomial likelihood estimator](/tutorials/tuto3_fit_with_likelihood.ipynb)
 4. [How to use a MCMC approach](/tutorials/tuto4_use_of_mcmc.ipynb)
 5. [How to build your own model of the instrument](/tutorials/tuto5_build_your_own_model.ipynb)
+6. [Use Neural Posterior Estimation for a fast and amortized inference](/tutorials/tuto6_npe.ipynb)
 
 # Installation
 ## Dependencies
