@@ -55,10 +55,16 @@ To uninstall:
 If you have a GPU, greatly boost the performance of GRIP by using `Cupy <https://cupy.dev/>`_.
 
 # Using Neural Posterior Estimation
-To use the Neural Posterior Estimation technique, the libraries `LAMPE <https://github.com/probabilists/lampe>`_ 
-and `PyTorch <https://pytorch.org/>`_ must be installed separately.
+To use the Neural Posterior Estimation technique, the libraries [LAMPE](https://github.com/probabilists/lampe) 
+and [PyTorch](https://pytorch.org/) must be installed separately.
 
 GPU is not necessary to use the NPE feature of GRIP.
+
+# Citation
+Please cite [Martinod et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..1AM/abstract) whenever you publish data reduced with GRIP and the relevant publication(s) for the algorithms you use within GRIP.
+They are usually mentioned in the documentation.
+
+The paper is also on [Arxiv](https://arxiv.org/abs/2407.08802).
 
 # Acknowledgements
 GRIP is a development carried out in the context of the [SCIFY project](http://denis-defrere.com/scify.php). SCIFY has received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program (grant agreement No 8660).
