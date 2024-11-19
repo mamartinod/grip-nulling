@@ -403,7 +403,8 @@ def log_posterior(params, lklh_func, bounds, func_model, data, func_args=(), fun
 def mcmc(params, lklh_func, bounds, func_model, data, func_args=(), func_kwargs={}, 
              neg_lklh=True, nwalkers=6, nstep=2000, progress_bar=True):
     """
-    Perform a MCMC with ``emcee`` library.
+    Perform a MCMC with `emcee <https://emcee.readthedocs.io/en/stable/>`_ library 
+    (`Foreman-Mackey et al. (2013) <https://ui.adsabs.harvard.edu/abs/2013PASP..125..306F/abstract>`_).
 
     Parameters
     ----------
