@@ -9,7 +9,7 @@ Over the year, several nulling self-calibration pipelines have been written. Wit
 
 
 # Documentation
-Find the documentation [here](https://mamartinod.github.io/grip/).
+Find the documentation [here](https://mamartinod.github.io/grip-nulling/).
 
 For the documentation of specific releases, see the [ReadTheDocs](https://grip.readthedocs.io/en/stable/).
 
