@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='grip-nulling',
-	 version='1.5.0',
+	 version='1.5.1',
     author='M.-A. Martinod',
     description='Self-calibration data reduction tools for nulling interferometry',
 	 long_description='GRIP is a novel data reduction methods providing self-calibrated methods for nulling interferometry. Check https://github.com/mamartinod/grip for more information',
