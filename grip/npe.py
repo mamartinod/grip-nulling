@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+This module contains the functions about using Neural Posterior Estimation for self-calibration.
+"""
 from tqdm import tqdm
 import numpy as np
 import torch.optim as optim
