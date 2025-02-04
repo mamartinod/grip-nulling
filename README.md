@@ -31,7 +31,7 @@ For the documentation of specific releases, see the [ReadTheDocs](https://grip.r
 - numdifftools >= 0.9.41
 - astropy >= 5.2.1
 - cupy >= 11.5.0 (optional and not downloaded during the installation)
-- lampe >= 0.8.2 (optional and not downloaded during the installation)
+- sbi >= 0.23.2 (optional and not downloaded during the installation)
 - pytorch >= 2.1.2 (optional and not downloaded during the installation)
 
 ## From PIP
@@ -55,7 +55,7 @@ To uninstall:
 If you have a GPU, greatly boost the performance of GRIP by using `Cupy <https://cupy.dev/>`_.
 
 # Using Neural Posterior Estimation
-To use the Neural Posterior Estimation technique, the libraries [LAMPE](https://github.com/probabilists/lampe) 
+To use the Neural Posterior Estimation technique, the libraries [SBI](https://github.com/sbi-dev/sbi) 
 and [PyTorch](https://pytorch.org/) must be installed separately.
 
 GPU is not necessary to use the NPE feature of GRIP.

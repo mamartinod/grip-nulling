@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from tqdm import tqdm
-from lampe.inference import NPE, NPELoss
-from lampe.utils import GDStep
 import numpy as np
-import torch.nn as nn
 import torch.optim as optim
 import torch
 import matplotlib.pyplot as plt
 import os
+from sbi.utils import posterior_nn # The purpose of this import is to avoids a circular import in `from sbi.neural_nets.net_builders import build_maf`
+from sbi.neural_nets.net_builders import build_maf
+
 
 class GripNPE(object):
     """
@@ -67,7 +67,7 @@ class GripNPE(object):
         self.func_args = func_args
         self.func_kwargs = func_kwargs
         self.loss = None
-        self.nn = None
+        self.maf_estimator = None
         
         
         if use_cuda and torch.cuda.is_available():
@@ -183,9 +183,9 @@ class GripNPE(object):
         Returns
         -------
         train_data : nd-array
-            Dataset to train the neural network.
+            Dataset to train the neural network of shape `(nb_batch_per_epoch, batch_size, data_size)`.
         train_params : nd-array
-            Associated parameters that have created `train_data`.
+            Associated parameters that have created `train_data` of shape `(nb_batch_per_epoch, batch_size, number_of_params)`.
 
         """
         train_data = []
@@ -199,57 +199,43 @@ class GripNPE(object):
         train_data = np.array(train_data)
         train_params = np.array(train_params)
         
+        self.train_data = torch.from_numpy(train_data).to(torch.float32).to(self.device)
+        self.train_params = torch.from_numpy(train_params).to(torch.float32).to(self.device)
+        
         return train_data, train_params
 
-    def set_nn(self, param_dim, output_dim, nb_transforms, hidden_features):
+    def set_nn(self, nb_transforms, nb_layers, hidden_features):
         """
         Create the normalising flow to infer data.
-        
-        The activation function is ELU.
+        The flow is a *masked autoregressive flow*.
 
         Parameters
         ----------
-        param_dim : int
-            Number of parameters to infer.
-        output_dim : int
-            Shape of the data to infer. For instance, if histograms are modelled, `output_dim = number of bins x number of spectral channels`
         nb_transforms : int
             Number of transformation in the normalising flow. It is used by the LAMPE library.
-        hidden_features : list
-            The length of the list defines the number of layers in a Transform component. The content gives the number of features out of each layer. It is used by the LAMPE library.
+        nb_layers : int
+            Number of layers in a Transform component.
+        hidden_features : int
+            Number of features out of each layer.
 
-        Returns
-        -------
-        None.
-
-        """
-        self.nn = NPE(theta_dim=param_dim, x_dim=output_dim, transforms=nb_transforms, hidden_features=hidden_features, activation=nn.ELU)
-        self.nn = self.nn.to(self.device)
-        
-    def calculate_loss(self, theta, s):
-        """
-        Calculate the loss function between the model and the data.
-
-        Parameters
+        Attributes
         ----------
-        theta : nd-array
-            Batch of parameters used for the dataset.
-        s : array-like
-            Batch of dataset to train the neural network.
-
-        Returns
-        -------
-        loss : float
-            Value of the loss function.
+        self.maf_estimator : neural network estimator flow
 
         """
-        theta = torch.from_numpy(theta).to(torch.float32).to(self.device)
-        s = torch.from_numpy(s).to(torch.float32).to(self.device)
-        loss = self.loss(theta, s)
-        return loss
-
-
-    def train_nn(self, nb_epoch, train_set, show_plot=False, save_fig=False, save_path='cluster.png'):
+        
+        # The normalising flow requires the shape of a single sample of data or params
+        # But it also assumes the input has shape [nb samples, *data shape]
+        # self.train_params and self.train_data have shape [nb batches, nb sample, *data_shape]
+        # So we need to crop as below:
+        tr_params = self.train_params[0]
+        tr_data = self.train_data[0]
+        
+        self.maf_estimator = build_maf(tr_params, tr_data, hidden_features=hidden_features, 
+                                       num_transforms=nb_transforms, num_blocks=nb_layers)
+        self.maf_estimator = self.maf_estimator.to(self.device)
+        
+    def train_nn(self, nb_epoch, show_plot=False, save_fig=False, save_path='cluster.png'):
         """
         Train the neural network following the Neural Posterior Estimation flow.
 
@@ -257,8 +243,6 @@ class GripNPE(object):
         ----------
         nb_epoch : int
             Number of epochs to train the neural network.
-        train_set : nd-array
-            Training dataset of shape (NB_BATCH_PER_EPOCH, BATCH_SIZE, data shape).
         show_plot : bool, optional
             Show the learning curve. The default is False.
         save_fig : bool, optional
@@ -272,30 +256,29 @@ class GripNPE(object):
             Values of the learning curve. The size of the array is the number of epochs.
 
         """
-        self.loss = NPELoss(self.nn)
-        self.optimizer = optim.AdamW(self.nn.parameters(), lr=1e-3, weight_decay=1e-2)
-        step = GDStep(self.optimizer, clip=1.0)
-
+        train_set = (self.train_params, self.train_data)
         
-        self.nn.train()
         training_loss = []
-        with tqdm(range(nb_epoch), unit='epoch') as tq:
-            for epoch in tq:
-                losses = torch.stack([
-                    step(self.calculate_loss(theta, s))
-                    for s, theta in zip(*train_set)
-                ])
-                mean_loss = losses.nanmean().item()
-                training_loss.append(mean_loss)
-    
-                tq.set_postfix(loss=mean_loss)
+        self.optimizer = optim.AdamW(list(self.maf_estimator.parameters()), lr=1e-3, weight_decay=1e-2)
 
+        with tqdm(range(nb_epoch), unit='epoch') as tq:
+            for ep in tq:
+                for (batch_param, batch_data) in zip(*train_set):
+                    self.optimizer.zero_grad()
+                    losses = self.maf_estimator.loss(batch_param, condition=batch_data)
+                    loss = torch.mean(losses)
+                    loss.backward()
+                    
+                    self.optimizer.step()
+                
+                training_loss.append(loss.item())
+                tq.set_postfix(loss=loss.item())
+                
         if show_plot:
             plt.figure(figsize=(4, 3))
-            plt.plot(training_loss, label='loss')
+            plt.semilogy(training_loss, label='loss')
             plt.legend(loc='best')
             plt.title('Evolution of the loss function')
-            plt.ylim(min(training_loss), 15)
             if save_fig:
                 os.makedirs(os.path.dirname(save_path), exist_ok=True)            
                 plt.savefig(save_path, format='png', dpi=150)
@@ -303,7 +286,7 @@ class GripNPE(object):
         return training_loss
 
    
-    def inference_on_data(self, data_to_inf):
+    def inference_on_data(self, data_to_inf, nb_sample):
         """
         Infer data to deduce the posterior of the parameters with the trained neural network.
 
@@ -311,6 +294,8 @@ class GripNPE(object):
         ----------
         data_to_inf : nd-array
             Data to infer. They must be in the same shape and format as the simulated data used to train the neural network.
+        nb_sample: int
+            Number of samples to generate from the surrogate posteriors of the parameters.
 
         Returns
         -------
@@ -319,13 +304,10 @@ class GripNPE(object):
 
         """
         data_inf = torch.from_numpy(data_to_inf).to(torch.float32).to(self.device)
-        self.nn.eval()
+        
         with torch.no_grad():
-            self.samples = self.nn.flow(data_inf).sample((2**16,))
-        self.samples = self.samples.cpu().detach().numpy()
-        samples = self.samples
-        
-        return samples
-
-
-        
+            samples = self.maf_estimator.sample((nb_sample,), condition=data_inf)
+        self.samples = samples.detach()
+        self.samples = self.samples.cpu().numpy()
+            
+        return self.samples
