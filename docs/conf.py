@@ -57,5 +57,6 @@ autodoc_mock_imports = [
 'scipy',
 'timeit',
 'torch',
+'tqdm'
 ]
 

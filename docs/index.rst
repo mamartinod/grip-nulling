@@ -75,7 +75,7 @@ GPU is not necessary to use the NPE feature of GRIP.
 
 Tutorials
 =========
-Tutorials are available on the `Github <https://github.com/mamartinod/grip-nulling>`_ page of the project.
+Tutorials are available on the `Github <https://github.com/mamartinod/grip-nulling>`__ page of the project.
 
 
 Navigation
