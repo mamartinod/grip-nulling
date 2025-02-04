@@ -1,0 +1,649 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitting &mdash; grip 1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=29a6c3e3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Generic" href="generic.html" />
+    <link rel="prev" title="Build a GRIP instrument model" href="build_model.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            grip
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="grip_nested_architecture.html">Before starting, understanding the GRIP nested architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build_model.html">Build a GRIP instrument model</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Fitting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.basin_hoppin_values"><code class="docutils literal notranslate"><span class="pre">basin_hoppin_values()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.calculate_chi2"><code class="docutils literal notranslate"><span class="pre">calculate_chi2()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.check_init_guess"><code class="docutils literal notranslate"><span class="pre">check_init_guess()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.chi2_pearson"><code class="docutils literal notranslate"><span class="pre">chi2_pearson()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.explore_parameter_space"><code class="docutils literal notranslate"><span class="pre">explore_parameter_space()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.log_chi2"><code class="docutils literal notranslate"><span class="pre">log_chi2()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.log_multinomial"><code class="docutils literal notranslate"><span class="pre">log_multinomial()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.log_posterior"><code class="docutils literal notranslate"><span class="pre">log_posterior()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.log_prior_uniform"><code class="docutils literal notranslate"><span class="pre">log_prior_uniform()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.lstsqrs_fit"><code class="docutils literal notranslate"><span class="pre">lstsqrs_fit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.mcmc"><code class="docutils literal notranslate"><span class="pre">mcmc()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.minimize_fit"><code class="docutils literal notranslate"><span class="pre">minimize_fit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.ramanujan"><code class="docutils literal notranslate"><span class="pre">ramanujan()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.rescaling"><code class="docutils literal notranslate"><span class="pre">rescaling()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.return_neg_func"><code class="docutils literal notranslate"><span class="pre">return_neg_func()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting.wrap_residuals"><code class="docutils literal notranslate"><span class="pre">wrap_residuals()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generic.html">Generic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="histogram_tools.html">Histogram tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="instrument_models.html">Instrument models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="load_files.html">Load files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="npe.html">NPE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plots.html">Plots</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">grip</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Fitting</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/fitting.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-fitting">
+<span id="fitting"></span><h1>Fitting<a class="headerlink" href="#module-fitting" title="Link to this heading"></a></h1>
+<p>This module contains the functions about fitting (chi2, likelihood, mcmc, exploring parameters).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.basin_hoppin_values">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">basin_hoppin_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds_guess</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.basin_hoppin_values" title="Link to this definition"></a></dt>
+<dd><p>Create several initial guesses.</p>
+<p>Create as many as initial guess as there are basin hopping iterations
+to do.
+The generation of these values are done with a normal distribution.</p>
+<p>The guesses are withdrawn from a Normal distribution of location factor <cite>init_guess</cite>
+and scale factor <cite>std_guess</cite>.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>init_guess<span class="classifier">list-like</span></dt><dd><p>List of free parameters to fit. The shape must be (N,) or equivalent, N being the number of parameters.</p>
+</dd>
+<dt>std_guess<span class="classifier">list-like</span></dt><dd><p>List of scale factors to generate guesses from Normal distributions. The shape must be (N,) or equivalent, N being the number of parameters.</p>
+</dd>
+<dt>bounds_guess<span class="classifier">list of tuple</span></dt><dd><p>Minimum and maximum values the guesses can be. The shape must be (N,2) or equivalent, N being the number of parameters</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>new_init_guess<span class="classifier">array-like</span></dt><dd><p>New set of guess. Array of shape (N,), with N the number of parameters.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.calculate_chi2">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">calculate_chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_model</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.calculate_chi2" title="Link to this definition"></a></dt>
+<dd><p>DEPRECATED
+Calculate a Chi squared. It can be used by an optimizer.
+The Chi squared is calculated from the model function <code class="docutils literal notranslate"><span class="pre">func_model</span></code> or
+from a pre-calculated model (see Keywords).</p>
+<section id="id1">
+<h2>Parameters<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>params<span class="classifier">array</span></dt><dd><p>Guess of the parameters.</p>
+</dd>
+<dt>data<span class="classifier">nd-array</span></dt><dd><p>Data to fit.</p>
+</dd>
+<dt>func_model<span class="classifier">callable function</span></dt><dd><p>Model used to fit the data (e.g. model of the histogram).</p>
+</dd>
+<dt>*args<span class="classifier">list-like</span></dt><dd><p>Extra-arguments which are in this order: the uncertainties (same shape as <code class="docutils literal notranslate"><span class="pre">data</span></code>),            x-axis, arguments of <code class="docutils literal notranslate"><span class="pre">func_model</span></code>.</p>
+</dd>
+<dt>**kwargs<span class="classifier">keywords</span></dt><dd><p>Accepted keywords are: <code class="docutils literal notranslate"><span class="pre">use_this_model</span></code> to use a predefined model of the data;            keywords to pass to <code class="docutils literal notranslate"><span class="pre">func_model</span></code>.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h2>Returns<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>chi2<span class="classifier">float</span></dt><dd><p>chi squared.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.check_init_guess">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">check_init_guess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.check_init_guess" title="Link to this definition"></a></dt>
+<dd><p>Check the initial guess in config file are between the bounds for a        parameter to fit.</p>
+<section id="id3">
+<h2>Parameters<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>guess<span class="classifier">list-like or array</span></dt><dd><p>values of the initial guess.</p>
+</dd>
+<dt>bound<span class="classifier">list-like or array</span></dt><dd><p>(…,2) list of boundaries of shape (…, (lower bound, upper bound)).</p>
+</dd>
+</dl>
+</section>
+<section id="id4">
+<h2>Returns<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>check<span class="classifier">bool</span></dt><dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if the initial guess is not between the bounds.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.chi2_pearson">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">chi2_pearson</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_model</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.chi2_pearson" title="Link to this definition"></a></dt>
+<dd><p>Pearson’s chi-squared test. This estimator is relevant for fitting histograms assuming
+the number of elements in the bins follows a multinomial distribution.</p>
+<p>The number of degrees of freedom is defined as: <span class="math notranslate nohighlight">\(N_{bins} - (N_{params} + 1)\)</span></p>
+<p>More info: <a class="reference external" href="https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test">https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test</a></p>
+<section id="id5">
+<h2>Parameters<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>params<span class="classifier">array</span></dt><dd><p>Guess of the parameters.</p>
+</dd>
+<dt>data<span class="classifier">nd-array</span></dt><dd><p>Data to fit.</p>
+</dd>
+<dt>func_model<span class="classifier">callable function</span></dt><dd><p>Model used to fit the data (e.g. model of the histogram).</p>
+</dd>
+<dt>*args<span class="classifier">list-like</span></dt><dd><p>Extra-arguments which are in this order: the uncertainties (same shape as <code class="docutils literal notranslate"><span class="pre">data</span></code>),            x-axis, arguments of <code class="docutils literal notranslate"><span class="pre">func_model</span></code>.</p>
+</dd>
+<dt>**kwargs<span class="classifier">keywords</span></dt><dd><p>Accepted keywords are: <code class="docutils literal notranslate"><span class="pre">use_this_model</span></code> to use a predefined model of the data;            keywords to pass to <code class="docutils literal notranslate"><span class="pre">func_model</span></code>.</p>
+</dd>
+</dl>
+</section>
+<section id="id6">
+<h2>Returns<a class="headerlink" href="#id6" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>chi2<span class="classifier">float</span></dt><dd><p>Pearson’s chi-squared.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.explore_parameter_space">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">explore_parameter_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cost_fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">histo_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_sz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xbins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wl_scale0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rvu_forfit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cdfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rvus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">histo_err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.explore_parameter_space" title="Link to this definition"></a></dt>
+<dd><p>Explore the parameter space with a chosen optimizer (chi2, likelihood…)</p>
+<section id="id7">
+<h2>Parameters<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>cost_fun<span class="classifier">function</span></dt><dd><p>Cost function to use for model fitting.</p>
+</dd>
+<dt>histo_data<span class="classifier">nd-array</span></dt><dd><p>Histograms of the data.</p>
+</dd>
+<dt>param_bounds<span class="classifier">nested tuple-like</span></dt><dd><p>Nested tuple of the parameter bounds on the form ((min1, max1), (min2, max2)…).</p>
+</dd>
+<dt>param_sz<span class="classifier">list</span></dt><dd><p>Number of points to sample each parameter axis.</p>
+</dd>
+<dt>xbins<span class="classifier">nd-array</span></dt><dd><p>Bin axes of the histogram.</p>
+</dd>
+<dt>wl_scale0<span class="classifier">1d-array</span></dt><dd><p>Wavelength scale.</p>
+</dd>
+<dt>instrument_model<span class="classifier">function</span></dt><dd><p>Function simulating the instrument and noises.</p>
+</dd>
+<dt>instrument_args<span class="classifier">tuple</span></dt><dd><p>Arguments for the <code class="docutils literal notranslate"><span class="pre">instrument_model</span></code> function.</p>
+</dd>
+<dt>rvu_forfit<span class="classifier">list of two arrays</span></dt><dd><p>List of uniform random values use to generate normally distributed values with the fitting parameters <code class="docutils literal notranslate"><span class="pre">mu</span></code> and <code class="docutils literal notranslate"><span class="pre">sig</span></code>.</p>
+</dd>
+<dt>cdfs<span class="classifier">list of arrays</span></dt><dd><p>List of the CDF which are used to reproduce the statistics of the noises. There areas many sequences are noise sources to simulate.</p>
+</dd>
+<dt>rvus<span class="classifier">list of arrays</span></dt><dd><p>List of uniform random values use to generate random values to reproduce the statistics of the noises. There areas many sequences are noise sources to simulate.</p>
+</dd>
+<dt>histo_err<span class="classifier">TYPE, optional</span></dt><dd><p>DESCRIPTION. The default is None.</p>
+</dd>
+<dt>**kwargs<span class="classifier">keywords</span></dt><dd><p>Keywords to pass to the <code class="docutils literal notranslate"><span class="pre">create_histogram_model</span></code> function.</p>
+</dd>
+</dl>
+</section>
+<section id="id8">
+<h2>Returns<a class="headerlink" href="#id8" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>chi2map<span class="classifier">nd-array</span></dt><dd><p>Datacube containing the value of the cost function and the tested parameters.</p>
+</dd>
+<dt>param_axes<span class="classifier">TYPE</span></dt><dd><p>DESCRIPTION.</p>
+</dd>
+<dt>steps<span class="classifier">array</span></dt><dd><p>Steps use to sample the parameters axes.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.log_chi2">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">log_chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_model</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.log_chi2" title="Link to this definition"></a></dt>
+<dd><p>Log likelihood of a Normally distributed data. For a model fitting context, 
+this function is maximised with the optimal parameters.
+It does not directly reflect the reduced <span class="math notranslate nohighlight">\(\chi^2\)</span>, one first needs to multiply 
+by two then divide by the number of degrees of freedom and take the opposite sign.</p>
+<section id="id9">
+<h2>Parameters<a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>params<span class="classifier">array</span></dt><dd><p>Guess of the parameters.</p>
+</dd>
+<dt>data<span class="classifier">nd-array</span></dt><dd><p>Data to fit.</p>
+</dd>
+<dt>func_model<span class="classifier">callable function</span></dt><dd><p>Model used to fit the data (e.g. model of the histogram).</p>
+</dd>
+<dt>*args<span class="classifier">list-like</span></dt><dd><p>Extra-arguments which are in this order: the uncertainties (same shape as <code class="docutils literal notranslate"><span class="pre">data</span></code>),            x-axis, arguments of <code class="docutils literal notranslate"><span class="pre">func_model</span></code>.</p>
+</dd>
+<dt>**kwargs<span class="classifier">keywords</span></dt><dd><p>Accepted keywords are: <code class="docutils literal notranslate"><span class="pre">use_this_model</span></code> to use a predefined model of the data;            keywords to pass to <code class="docutils literal notranslate"><span class="pre">func_model</span></code>.</p>
+</dd>
+</dl>
+</section>
+<section id="id10">
+<h2>Returns<a class="headerlink" href="#id10" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>chi2<span class="classifier">float</span></dt><dd><p>half chi squared.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.log_multinomial">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">log_multinomial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_model</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.log_multinomial" title="Link to this definition"></a></dt>
+<dd><p>Likelihood of a dataset following multinomial distribution (e.g. number of occurences in the bins of a histogram).</p>
+<section id="id11">
+<h2>Parameters<a class="headerlink" href="#id11" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>params<span class="classifier">array</span></dt><dd><p>parameters to fit.</p>
+</dd>
+<dt>data<span class="classifier">array</span></dt><dd><p>data to fit.</p>
+</dd>
+<dt>func_model<span class="classifier">function</span></dt><dd><p>Model of the data.</p>
+</dd>
+<dt>*args<span class="classifier">function arguments</span></dt><dd><p>extra-arguments to pass to this function and <code class="docutils literal notranslate"><span class="pre">func_model</span></code>. The first argument must be values of the x-axis of the dataset. 
+If <code class="docutils literal notranslate"><span class="pre">func_model</span></code> takes any keyword, they must be passed in a dictionary in the last position in *args.</p>
+</dd>
+<dt>**kwargs<span class="classifier">keywords arguments</span></dt><dd><dl class="simple">
+<dt>Keywords accepted: </dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">use_this_model</span></code> (array) : uses the values from a model generated out of this function instead of calling <code class="docutils literal notranslate"><span class="pre">func_model</span></code></p></li>
+<li><p>Keywords to pass to <code class="docutils literal notranslate"><span class="pre">func_model</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+<section id="id12">
+<h2>Returns<a class="headerlink" href="#id12" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>float</dt><dd><p>log of the likelihood. The negative is picked for minimize algorithm to work.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.log_posterior">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lklh_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.log_posterior" title="Link to this definition"></a></dt>
+<dd><p>Posterior of the data.</p>
+<section id="id13">
+<h2>Parameters<a class="headerlink" href="#id13" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>params<span class="classifier">list-like</span></dt><dd><p>List of parameters.</p>
+</dd>
+<dt>lklh_func<span class="classifier">function</span></dt><dd><p>Likelihood function to use.</p>
+</dd>
+<dt>bounds<span class="classifier">array-like</span></dt><dd><p>Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),…).</p>
+</dd>
+<dt>func_model<span class="classifier">function</span></dt><dd><p>Function of the model which reproduces the data to fig (e.g. histogram).</p>
+</dd>
+<dt>data<span class="classifier">array of size (N,) or (nb wl, N)</span></dt><dd><p>Data to fit.</p>
+</dd>
+<dt>func_args<span class="classifier">list-like, optional</span></dt><dd><p>Arguments to pass to <code class="docutils literal notranslate"><span class="pre">func_model</span></code>. The default is ().</p>
+</dd>
+<dt>func_kwargs<span class="classifier">dic-like, optional</span></dt><dd><p>Keywords to pass to <code class="docutils literal notranslate"><span class="pre">func_model</span></code>. The default is {}.</p>
+</dd>
+<dt>neg_lklh<span class="classifier">bool, optional</span></dt><dd><p>Change the sign of the value of the likelihood. 
+If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it means the returned likelihood by <code class="docutils literal notranslate"><span class="pre">lklh_func</span></code> is negative thus it signs must be reverted.
+The default is True.</p>
+</dd>
+</dl>
+</section>
+<section id="id14">
+<h2>Returns<a class="headerlink" href="#id14" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>log_posterior<span class="classifier">float</span></dt><dd><p>value of the posterior.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.log_prior_uniform">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">log_prior_uniform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.log_prior_uniform" title="Link to this definition"></a></dt>
+<dd><p>Uniform prior on a set of parameters to fit</p>
+<section id="id15">
+<h2>Parameters<a class="headerlink" href="#id15" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>params<span class="classifier">array of size (N,)</span></dt><dd><p>Parameters to fit.</p>
+</dd>
+<dt>bounds<span class="classifier">array-like</span></dt><dd><p>Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),…).</p>
+</dd>
+</dl>
+</section>
+<section id="id16">
+<h2>Returns<a class="headerlink" href="#id16" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>float</dt><dd><p>value of the prior.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.lstsqrs_fit">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">lstsqrs_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yerr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.lstsqrs_fit" title="Link to this definition"></a></dt>
+<dd><p>Fit the data with the least squares algorithm and taking into account the boundaries.</p>
+<p>The function uses the <cite>scipy.optimize.least_squares</cite> function
+(<a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares">https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares</a>).</p>
+<p>The cost function uses the “huber” transformation hence the cost value is not a chi squared.
+The boundaries are handled according to the Trust-Reflective-Region.</p>
+<section id="id17">
+<h2>Parameters<a class="headerlink" href="#id17" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>func_model<span class="classifier">function</span></dt><dd><p>Function to fit the data.</p>
+</dd>
+<dt>p0<span class="classifier">tuple-like</span></dt><dd><p>Initial guess.</p>
+</dd>
+<dt>xdata<span class="classifier">1d-array</span></dt><dd><p>Flatten array of the x-axis of the data.</p>
+</dd>
+<dt>ydata<span class="classifier">1d-array</span></dt><dd><p>Flatten array of the data.</p>
+</dd>
+<dt>yerr<span class="classifier">1d-array, optional</span></dt><dd><p>Flatten array of the data error. The default is None.</p>
+</dd>
+<dt>bounds<span class="classifier">tuple-like, optional</span></dt><dd><p>Tuple-like of shape ((min1, max1), …, (minN, maxN)). The default is None.</p>
+</dd>
+<dt>diff_step<span class="classifier">list, optional</span></dt><dd><p>Determines the relative step size for the finite difference approximation of the Jacobian.            See <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares">https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares</a>.                The default is None.</p>
+</dd>
+<dt>x_scale<span class="classifier">TYPE, optional</span></dt><dd><p>Characteristic scale of each variable.            See <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares">https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html#scipy.optimize.least_squares</a>.                 The default is 1.</p>
+</dd>
+<dt>func_args<span class="classifier">tuple, optional</span></dt><dd><p>Tuple of arguments to pass to the cost function. The default is ().</p>
+</dd>
+<dt>func_kwargs<span class="classifier">dict, optional</span></dt><dd><p>Dictionary of arguments to pass to the cost function. The default is {}.</p>
+</dd>
+</dl>
+</section>
+<section id="id18">
+<h2>Returns<a class="headerlink" href="#id18" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>popt<span class="classifier">list</span></dt><dd><p>List of optimised parameters.</p>
+</dd>
+<dt>pcov<span class="classifier">2d-array</span></dt><dd><p>Covariance matrix of the optimised parameters.</p>
+</dd>
+<dt>res<span class="classifier">OptimizeResult</span></dt><dd><p>Full output of the fitting algorithm.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.mcmc">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">mcmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lklh_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_lklh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nstep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.mcmc" title="Link to this definition"></a></dt>
+<dd><p>Perform a MCMC with <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a> library 
+(<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2013PASP..125..306F/abstract">Foreman-Mackey et al. (2013)</a>).</p>
+<section id="id19">
+<h2>Parameters<a class="headerlink" href="#id19" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>params<span class="classifier">list-like</span></dt><dd><p>Initial guess.</p>
+</dd>
+<dt>lklh_func<span class="classifier">callable function</span></dt><dd><p>Function returning the likelihood.</p>
+</dd>
+<dt>bounds<span class="classifier">tuple-like</span></dt><dd><p>Bounds of the parameters. The shape is ((min1, max1), …, (minN, maxN)) .</p>
+</dd>
+<dt>func_model<span class="classifier">callable function</span></dt><dd><p>Function of the model to fit.</p>
+</dd>
+<dt>data<span class="classifier">nd-array</span></dt><dd><p>Data to fit.</p>
+</dd>
+<dt>func_args<span class="classifier">tuple, optional</span></dt><dd><p>Tuple of arguments to pass to <code class="docutils literal notranslate"><span class="pre">func_model</span></code>. The default is ().</p>
+</dd>
+<dt>func_kwargs<span class="classifier">dict, optional</span></dt><dd><p>Dictionary of keywords to pass to <code class="docutils literal notranslate"><span class="pre">func_model</span></code>. The default is {}.</p>
+</dd>
+<dt>neg_lklh<span class="classifier">bool, optional</span></dt><dd><p>Indicates if the likelihood function returns a negative value. The default is True.</p>
+</dd>
+<dt>nwalkers<span class="classifier">int, optional</span></dt><dd><p>Number of walkers to use in the MCMC. The default is 6.</p>
+</dd>
+<dt>nstep<span class="classifier">int, optional</span></dt><dd><p>Number of steps for the walkers. The default is 2000.</p>
+</dd>
+<dt>progress_bar<span class="classifier">bool, optional</span></dt><dd><p>Display the progress bar. The default is True.</p>
+</dd>
+</dl>
+</section>
+<section id="id20">
+<h2>Returns<a class="headerlink" href="#id20" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>samples<span class="classifier">nd-array</span></dt><dd><p>Samples from the MCMC algorithm. The shape is (<code class="docutils literal notranslate"><span class="pre">nwalkers</span></code>, <code class="docutils literal notranslate"><span class="pre">nstep</span></code>)</p>
+</dd>
+<dt>flat_samples<span class="classifier">1d-array</span></dt><dd><p>Flatten chains with already discarded burn-in.             The burn-in values is defined as <code class="docutils literal notranslate"><span class="pre">min(nstep//10,</span> <span class="pre">600)</span></code>.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.minimize_fit">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">minimize_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cost_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yerr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hessian_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'backward'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.minimize_fit" title="Link to this definition"></a></dt>
+<dd><p>Wrapper using the <code class="docutils literal notranslate"><span class="pre">scipy.optimize.minimize</span></code> with the Powell algorithm.</p>
+<section id="id21">
+<h2>Parameters<a class="headerlink" href="#id21" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>cost_func<span class="classifier">function</span></dt><dd><p>cost function.</p>
+</dd>
+<dt>func_model<span class="classifier">function</span></dt><dd><p>model of the instrument.</p>
+</dd>
+<dt>p0<span class="classifier">array-like</span></dt><dd><p>Initial guess on the parameters to fit.</p>
+</dd>
+<dt>xdata<span class="classifier">array-like</span></dt><dd><p>abscissa of the data to fit.</p>
+</dd>
+<dt>ydata<span class="classifier">array-like</span></dt><dd><p>Dataset to fit (could be a histogram).</p>
+</dd>
+<dt>yerr<span class="classifier">array-like, optional</span></dt><dd><p>uncertainties on the data. The default is None.</p>
+</dd>
+<dt>bounds<span class="classifier">array-like, optional</span></dt><dd><p>Boundaries of the parameters to fit. The shape must be like ((min_param1, max_param2), (min_param2, max_param2),…). The default is None.</p>
+</dd>
+<dt>hessian_method: string, optional</dt><dd><p>Can accept ‘central’, ‘forward’, ‘backward’. Sometines numdifftools returns an Hessian matrix with NaN. The reason is unknown. Changing the method can solve it. The default is ‘backward’. More info on <a class="reference external" href="https://numdifftools.readthedocs.io/en/v0.9.41/reference/generated/numdifftools.core.Hessian.html">https://numdifftools.readthedocs.io/en/v0.9.41/reference/generated/numdifftools.core.Hessian.html</a></p>
+</dd>
+<dt>func_args<span class="classifier">list-like, optional</span></dt><dd><p>Arguments to pass to <code class="docutils literal notranslate"><span class="pre">func_model</span></code>. The default is ().</p>
+</dd>
+<dt>func_kwargs<span class="classifier">dic-like, optional</span></dt><dd><p>Keywords to pass to <code class="docutils literal notranslate"><span class="pre">func_model</span></code>. The default is {}.</p>
+</dd>
+</dl>
+</section>
+<section id="id22">
+<h2>Returns<a class="headerlink" href="#id22" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>popt<span class="classifier">array</span></dt><dd><p>Best fitted values.</p>
+</dd>
+<dt>pcov<span class="classifier">2D-array</span></dt><dd><p>Covariance matrix.</p>
+</dd>
+<dt>res<span class="classifier">dic</span></dt><dd><p>Complete return of the <code class="docutils literal notranslate"><span class="pre">scipy.optimize.minimize</span></code> function.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.ramanujan">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">ramanujan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.ramanujan" title="Link to this definition"></a></dt>
+<dd><p>Ramanujan approximation to calculate the factorial of an integer. 
+Work very well for any integer &gt;= 2.
+<a class="reference external" href="https://en.wikipedia.org/wiki/Stirling%27s_approximation">https://en.wikipedia.org/wiki/Stirling%27s_approximation</a></p>
+<section id="id23">
+<h2>Parameters<a class="headerlink" href="#id23" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>n<span class="classifier">int or array</span></dt><dd><p>Value to calculate its factorial.</p>
+</dd>
+</dl>
+</section>
+<section id="id24">
+<h2>Returns<a class="headerlink" href="#id24" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>rama<span class="classifier">float or array</span></dt><dd><p>Factorial of <code class="docutils literal notranslate"><span class="pre">n</span></code>.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.rescaling">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">rescaling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rescale_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.rescaling" title="Link to this definition"></a></dt>
+<dd><p>Rescale a function by a constant.
+It performs <em>tempering</em> in MCMC, i.e. to smoothen/sharpen the log-likelihood function.
+Indeed, if the log-likelihood decrease by 1 unit, it means the event is 2.7x less likely to happen.
+Some log-likelihood functions needs to be tempered before being explored by MCMC algorithm.</p>
+<p>Note: the shape of the posterior is scaled by the square root of the tempering factor <span class="math notranslate nohighlight">\(1 / \sqrt{tempering~factor}\)</span>.</p>
+<section id="id25">
+<h2>Parameters<a class="headerlink" href="#id25" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>func<span class="classifier">callable</span></dt><dd><p>Function to rescale.</p>
+</dd>
+<dt>tempering_factor<span class="classifier">float</span></dt><dd><p>Scale factor.</p>
+</dd>
+</dl>
+</section>
+<section id="id26">
+<h2>Returns<a class="headerlink" href="#id26" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>callable</dt><dd><p>Rescaled function.</p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tempering</span><span class="p">(</span><span class="n">log_chi2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span> <span class="o">/</span> <span class="n">ddof</span><span class="p">)</span> <span class="c1"># Returns a reduced chi2 cost function</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.return_neg_func">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">return_neg_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.return_neg_func" title="Link to this definition"></a></dt>
+<dd><p>Return a callable which is the negative of a function: <cite>f(x) -&gt; -f(x)</cite>.</p>
+<p>It can be used to create a callable cost function one wants to minimize (e.g. <span class="math notranslate nohighlight">\(\chi^2\)</span> estimator).</p>
+<section id="id27">
+<h2>Parameters<a class="headerlink" href="#id27" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>func<span class="classifier">callable</span></dt><dd><p>function to return the negative version.</p>
+</dd>
+</dl>
+</section>
+<section id="id28">
+<h2>Returns<a class="headerlink" href="#id28" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>callable</dt><dd><p>negative version of the function.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fitting.wrap_residuals">
+<span class="sig-prename descclassname"><span class="pre">fitting.</span></span><span class="sig-name descname"><span class="pre">wrap_residuals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fitting.wrap_residuals" title="Link to this definition"></a></dt>
+<dd><p>Calculate the residuals between data points and the model.</p>
+<section id="id29">
+<h2>Parameters<a class="headerlink" href="#id29" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>func<span class="classifier">callable</span></dt><dd><p>function of the model.</p>
+</dd>
+<dt>ydata<span class="classifier">array-like</span></dt><dd><p>Data to calculate the residuals with <code class="docutils literal notranslate"><span class="pre">func</span></code>.</p>
+</dd>
+<dt>transform<span class="classifier">None-type or array-like</span></dt><dd><p>Transform the residuals (e.g. weight by the uncertainties on <code class="docutils literal notranslate"><span class="pre">ydata</span></code>).</p>
+</dd>
+</dl>
+</section>
+<section id="id30">
+<h2>Returns<a class="headerlink" href="#id30" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>array-like</dt><dd><p>Residuals.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="build_model.html" class="btn btn-neutral float-left" title="Build a GRIP instrument model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="generic.html" class="btn btn-neutral float-right" title="Generic" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, mamartinod.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

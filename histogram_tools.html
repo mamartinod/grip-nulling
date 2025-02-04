@@ -1,0 +1,560 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Histogram tools &mdash; grip 1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=29a6c3e3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Instrument models" href="instrument_models.html" />
+    <link rel="prev" title="Generic" href="generic.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            grip
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="grip_nested_architecture.html">Before starting, understanding the GRIP nested architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build_model.html">Build a GRIP instrument model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fitting.html">Fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generic.html">Generic</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Histogram tools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.binarySearchCpu"><code class="docutils literal notranslate"><span class="pre">binarySearchCpu()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.computeCdf"><code class="docutils literal notranslate"><span class="pre">computeCdf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.computeCdfCpu"><code class="docutils literal notranslate"><span class="pre">computeCdfCpu()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.computeCdfGPU"><code class="docutils literal notranslate"><span class="pre">computeCdfGPU()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.compute_data_histogram"><code class="docutils literal notranslate"><span class="pre">compute_data_histogram()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.create_histogram_model"><code class="docutils literal notranslate"><span class="pre">create_histogram_model()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.generate_rv_params"><code class="docutils literal notranslate"><span class="pre">generate_rv_params()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.getErrorBinomNorm"><code class="docutils literal notranslate"><span class="pre">getErrorBinomNorm()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.getErrorCDF"><code class="docutils literal notranslate"><span class="pre">getErrorCDF()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.getErrorNull"><code class="docutils literal notranslate"><span class="pre">getErrorNull()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.getErrorPDF"><code class="docutils literal notranslate"><span class="pre">getErrorPDF()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.get_cdf"><code class="docutils literal notranslate"><span class="pre">get_cdf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.get_dark_cdf"><code class="docutils literal notranslate"><span class="pre">get_dark_cdf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#histogram_tools.rv_generator"><code class="docutils literal notranslate"><span class="pre">rv_generator()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="instrument_models.html">Instrument models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="load_files.html">Load files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="npe.html">NPE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plots.html">Plots</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">grip</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Histogram tools</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/histogram_tools.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-histogram_tools">
+<span id="histogram-tools"></span><h1>Histogram tools<a class="headerlink" href="#module-histogram_tools" title="Link to this heading"></a></h1>
+<p>This module contains function to build histograms, get cumulative density function
+and generate randon values from customed distributions, both on GPU or CPU.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.binarySearchCpu">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">binarySearchCpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.binarySearchCpu" title="Link to this definition"></a></dt>
+<dd><p>Count values less than or equal to in another array.
+The algorithm used is binary search.</p>
+<p><a class="reference external" href="https://www.enjoyalgorithms.com/blog/count-values-less-than-equal-to-in-another-array">https://www.enjoyalgorithms.com/blog/count-values-less-than-equal-to-in-another-array</a></p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">1d-array</span></dt><dd><p>“reference” array.</p>
+</dd>
+<dt>y<span class="classifier">1d-array</span></dt><dd><p>Array in which we want to count the number of elements lower or equal to the values in <cite>x</cite>.
+MUST be sorted</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>high<span class="classifier">int</span></dt><dd><p>Number of elements less than or equal to in another array.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.computeCdf">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">computeCdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.computeCdf" title="Link to this definition"></a></dt>
+<dd><p>Compute the empirical cumulative density function (CDF).
+It is a wrapper which calls the GPU or CPU version depending on the presence
+of cupy and a GPU.</p>
+<section id="id1">
+<h2>Parameters<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>x_axis<span class="classifier">cupy array</span></dt><dd><p>x-axis of the CDF.</p>
+</dd>
+<dt>data<span class="classifier">cupy array</span></dt><dd><p>Data used to create the CDF.</p>
+</dd>
+<dt>mode<span class="classifier">string</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">ccdf</span></code>, the survival function (complementary of the CDF)            is calculated instead.</p>
+</dd>
+<dt>normed<span class="classifier">bool</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, the CDF is normed so that the maximum is            equal to 1.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h2>Returns<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>cdf<span class="classifier">cupy array</span></dt><dd><p>CDF of <code class="docutils literal notranslate"><span class="pre">data</span></code>.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.computeCdfCpu">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">computeCdfCpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.computeCdfCpu" title="Link to this definition"></a></dt>
+<dd><p>Compute the empirical cumulative density function (CDF) on CPU.</p>
+<section id="id3">
+<h2>Parameters<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>x_axis<span class="classifier">cupy array</span></dt><dd><p>x-axis of the CDF.</p>
+</dd>
+<dt>data<span class="classifier">array</span></dt><dd><p>Data used to create the CDF.</p>
+</dd>
+<dt>mode<span class="classifier">string</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">ccdf</span></code>, the survival function (complementary of the CDF)            is calculated instead.</p>
+</dd>
+<dt>normed<span class="classifier">bool</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, the CDF is normed so that the maximum is            equal to 1.</p>
+</dd>
+</dl>
+</section>
+<section id="id4">
+<h2>Returns<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>cdf<span class="classifier">cupy array</span></dt><dd><p>CDF of <code class="docutils literal notranslate"><span class="pre">data</span></code>.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.computeCdfGPU">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">computeCdfGPU</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.computeCdfGPU" title="Link to this definition"></a></dt>
+<dd><p>Compute the empirical cumulative density function (CDF) on GPU with CUDA.</p>
+<section id="id5">
+<h2>Parameters<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>x_axis<span class="classifier">cupy array</span></dt><dd><p>x-axis of the CDF.</p>
+</dd>
+<dt>data<span class="classifier">cupy array</span></dt><dd><p>Data used to create the CDF.</p>
+</dd>
+<dt>mode<span class="classifier">string</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">ccdf</span></code>, the survival function (complementary of the CDF)            is calculated instead.</p>
+</dd>
+<dt>normed<span class="classifier">bool</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, the CDF is normed so that the maximum is            equal to 1.</p>
+</dd>
+</dl>
+</section>
+<section id="id6">
+<h2>Returns<a class="headerlink" href="#id6" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>cdf<span class="classifier">cupy array</span></dt><dd><p>CDF of <code class="docutils literal notranslate"><span class="pre">data</span></code>.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.compute_data_histogram">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">compute_data_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_null</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin_bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wl_scale</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.compute_data_histogram" title="Link to this definition"></a></dt>
+<dd><p>Calculate the historam of the null depth for each spectral channel.
+By default, the histogram is normalised by its integral,         unless specified in <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code>.</p>
+<section id="id7">
+<h2>Parameters<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>data_null<span class="classifier">2d-array (wl, number of points)</span></dt><dd><p>sequence of null depths. The first axis corresponds to the spectral             dispersion.</p>
+</dd>
+<dt>bin_bounds<span class="classifier">tuple-like (scalar, scalar)</span></dt><dd><p>boundaries of the null depths range. Values out of this range are             pruned from <code class="docutils literal notranslate"><span class="pre">data_null</span></code> when making the histogram</p>
+</dd>
+<dt>wl_scale<span class="classifier">1d-array</span></dt><dd><p>wavelength scale.</p>
+</dd>
+<dt>**kwargs<span class="classifier">extra-keywords</span></dt><dd><p>Use <code class="docutils literal notranslate"><span class="pre">normed=False</span></code> to <strong>not</strong> normalise the histogram by its sum.</p>
+</dd>
+</dl>
+</section>
+<section id="id8">
+<h2>Returns<a class="headerlink" href="#id8" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>null_pdf<span class="classifier">2d-array (wavelength size, nb of bins)</span></dt><dd><p>Histogram of the null depth per spectral channel.</p>
+</dd>
+<dt>null_pdf_err<span class="classifier">TYPE</span></dt><dd><p>Error on the histogram frequency per spectral channel, assuming the             number of elements per bin follows a binomial distribution.</p>
+</dd>
+<dt>sz<span class="classifier">int</span></dt><dd><p>Number of bins</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.create_histogram_model">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">create_histogram_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params_to_fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xbins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wl_scale0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rvus_forfit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cdfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rvus</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.create_histogram_model" title="Link to this definition"></a></dt>
+<dd><p id="create-histogram-model">Monte-Carlo simulator of the instrument model to give a histogram.</p>
+<p>To avoid memory overflow, the total number of samples can be chunked into smaller parts.
+The resulting histogram is the same if the simulation is made with the total number of samples
+in one go.</p>
+<section id="id9">
+<h2>Parameters<a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
+<dl>
+<dt>params_to_fit<span class="classifier">tuple-like</span></dt><dd><p>List of the parameters to fit.</p>
+</dd>
+<dt>xbins<span class="classifier">2D array</span></dt><dd><p>1st axis = wavelength</p>
+</dd>
+<dt>params_type<span class="classifier">list</span></dt><dd><p>Labels of the parameters to fit, see the notes for more information.</p>
+</dd>
+<dt>wl_scale0<span class="classifier">1D array</span></dt><dd><p>Wavelength scale.</p>
+</dd>
+<dt>instrument_model<span class="classifier">function</span></dt><dd><p>Function simulating the instrument.</p>
+</dd>
+<dt>instrument_args<span class="classifier">tuple, must contain same type of data (all float or all array of the same shape)</span></dt><dd><p>List of arguments to pass to <code class="docutils literal notranslate"><span class="pre">instrument_model</span></code> which are not fitted.</p>
+</dd>
+<dt>rvus_forfit<span class="classifier">dic</span></dt><dd><p>Contains the uniformly distributed values to generate random values following distributions which parameters are to fit.</p>
+</dd>
+<dt>cdfs<span class="classifier">tuple. First put CDF of quantities which does not depend on the wavelength.</span></dt><dd><p>For wavelength-dependant quantity, 1st axis = wavelength.</p>
+</dd>
+<dt>rvus<span class="classifier">tuple. First put CDF of quantities which does not depend on the wavelength.</span></dt><dd><p>For wavelength-dependant quantity, 1st axis = wavelength.</p>
+</dd>
+<dt>**kwargs<span class="classifier">keywords</span></dt><dd><p><code class="docutils literal notranslate"><span class="pre">n_samp_per_loop</span></code> (int): number of samples for the MC simulation per loop.</p>
+<p><code class="docutils literal notranslate"><span class="pre">nloop</span></code> (int): number of loops</p>
+</dd>
+</dl>
+</section>
+<section id="id10">
+<h2>Returns<a class="headerlink" href="#id10" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>accum<span class="classifier">1d-array</span></dt><dd><p>Model of the histogram.</p>
+</dd>
+<dt>diag<span class="classifier">list</span></dt><dd><p>Diagnostic data from the instrument model.</p>
+</dd>
+<dt>diag_rv_1d<span class="classifier">list</span></dt><dd><p>Diagnostic data that are random values generated from the noise sources that are spectrally independant.</p>
+</dd>
+<dt>diag_rv_2d<span class="classifier">list</span></dt><dd><p>Diagnostic data that are random values generated from the noise sources that are spectrally dependant.</p>
+</dd>
+</dl>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
+<p>This function can handle model with an arbitrary number of parameters, that can be parameters of a distribution or something else.</p>
+<p>The label system carried by <cite>params_type</cite> allows to identified the parameters that are not related to a distribution, 
+that are related to the same distribution (e.g. a Normal distribution needs 2 parameters, a Poisson needs one).</p>
+<p>In addition, when it comes to generate values from a distribution which parameters are to find, one may want some reproductibility.
+The parameter <cite>rvus_forfit</cite> embeds sequence of uniformly distributed values in a dictionary. 
+The keys of the dictionary must match the labels in <cite>params_type</cite>. If a key is not found, a new sequence is generated.
+For a key, the value can be <cite>None</cite> if no reproductibility is expected from this distribution.</p>
+<p>For example, let’s assume a model that take the parameters: null depth, correcting factor, <span class="math notranslate nohighlight">\(\mu\)</span> and <span class="math notranslate nohighlight">\(\sigma\)</span> of 2 normal distributions
+and the <span class="math notranslate nohighlight">\(\lambda\)</span> of a Poisson distribution.</p>
+<dl class="simple">
+<dt>We have :</dt><dd><ul class="simple">
+<li><p>params_to_fit = [null depth, correcting factor, <span class="math notranslate nohighlight">\(\mu_1\)</span> and <span class="math notranslate nohighlight">\(\sigma_1\)</span>, <span class="math notranslate nohighlight">\(\mu_1\)</span> and <span class="math notranslate nohighlight">\(\sigma_1\)</span>, <span class="math notranslate nohighlight">\(\lambda\)</span>]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">params_type</span> <span class="pre">=</span> <span class="pre">['deterministic',</span> <span class="pre">'deterministic',</span> <span class="pre">'normal1',</span> <span class="pre">'normal1',</span> <span class="pre">'normal2',</span> <span class="pre">'normal2',</span> <span class="pre">'poisson']</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rvus_forfit</span> <span class="pre">=</span> <span class="pre">{'normal1':None,</span> <span class="pre">'normal2':array([0.27259743,</span> <span class="pre">0.89770258,</span> <span class="pre">0.72093494]),</span> <span class="pre">'poisson':None}</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<p>The function will identified their are 2 <em>constant</em> parameters, 3 distributions to model with respectively 2, 2 and 1 parameters.
+Among these 3 distributions, only one is reproductible if given the same set of values between two calls of the function <code class="docutils literal notranslate"><span class="pre">create_histogram_model</span></code>.</p>
+<dl class="simple">
+<dt>Implemented distributions and their associated keywords are:</dt><dd><ul class="simple">
+<li><p>Normal distribution with keyword ‘normal[…]’ pattern, compatible with frozen uniform sequence</p></li>
+<li><p>Poisson distribution with keyword ‘poisson[…]’ pattern, not compatible with frozen uniform sequence</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.generate_rv_params">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">generate_rv_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params_to_fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rvus_forfit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtypesize</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.generate_rv_params" title="Link to this definition"></a></dt>
+<dd><p>Generate random values from distribution which parameters are to be fit.
+An arbitrary number of distributions can be used.</p>
+<p>This function returns random values from Normal and Poisson distributions.</p>
+<section id="id11">
+<h2>Parameters<a class="headerlink" href="#id11" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>params_to_fit<span class="classifier">list</span></dt><dd><p>List of all the parameters to fit.</p>
+</dd>
+<dt>params_type<span class="classifier">list</span></dt><dd><p>List of the natures of the distribution from which generate random values. It must have the same length as <cite>params_to_fit</cite></p>
+</dd>
+<dt>rvus_forfit<span class="classifier">dict</span></dt><dd><p>Dictionary of sequence of uniform distributions that can be use to generate random values in a reproducible way. The keywords must be the same as the ones in <cite>params_type</cite>.</p>
+</dd>
+<dt>n_samp<span class="classifier">int</span></dt><dd><p>Number of samples to generate per distribution.</p>
+</dd>
+<dt>dtypesize<span class="classifier">numpy or cupy digital size object</span></dt><dd><p>Digital size of the array containing the random values (e.g. <code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">cp.float32</span></code>…).</p>
+</dd>
+</dl>
+</section>
+<section id="raises">
+<h2>Raises<a class="headerlink" href="#raises" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>NameError</dt><dd><p>The distribution in <cite>params_type</cite> is not recognised.</p>
+</dd>
+</dl>
+</section>
+<section id="id12">
+<h2>Returns<a class="headerlink" href="#id12" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>rvs_to_fit<span class="classifier">array</span></dt><dd><p>Array containing all the random values from the distributions which parameters are to determine.
+A row contains the sequence from one distribution.</p>
+</dd>
+</dl>
+</section>
+<section id="see-also">
+<h2>See also<a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="#create-histogram-model"><span class="std std-ref">create_histogram_model</span></a>: the Notes detail the use of <code class="docutils literal notranslate"><span class="pre">params_to_fit`,</span> <span class="pre">``params_type</span></code> and <code class="docutils literal notranslate"><span class="pre">rvus_forfit</span></code>.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.getErrorBinomNorm">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">getErrorBinomNorm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.getErrorBinomNorm" title="Link to this definition"></a></dt>
+<dd><p>Calculate the error of the PDF knowing the number of elements in a bin        is a random value following a binomial distribution.</p>
+<section id="id13">
+<h2>Parameters<a class="headerlink" href="#id13" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>pdf<span class="classifier">array</span></dt><dd><p>Normalized PDF which the error is calculated.</p>
+</dd>
+<dt>data_size<span class="classifier">int</span></dt><dd><p>Number of elements used to calculate the PDF.</p>
+</dd>
+<dt>normed<span class="classifier">bool</span></dt><dd><p>Set to <code class="docutils literal notranslate"><span class="pre">True</span></code> if <code class="docutils literal notranslate"><span class="pre">pdf</span></code> is normalised, <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.</p>
+</dd>
+</dl>
+</section>
+<section id="id14">
+<h2>Returns<a class="headerlink" href="#id14" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>pdf_err<span class="classifier">array</span></dt><dd><p>Error of the PDF.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.getErrorCDF">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">getErrorCDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_null</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_null_err</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">null_axis</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.getErrorCDF" title="Link to this definition"></a></dt>
+<dd><p>Calculate the error of the CDF. It uses the cupy library.</p>
+<section id="id15">
+<h2>Parameters<a class="headerlink" href="#id15" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>data_null<span class="classifier">array</span></dt><dd><p>Null depth measurements used to create the CDF.</p>
+</dd>
+<dt>data_null_err<span class="classifier">array</span></dt><dd><p>Error on the null depth measurements.</p>
+</dd>
+<dt>null_axis<span class="classifier">array</span></dt><dd><p>Abscissa of the CDF.</p>
+</dd>
+</dl>
+</section>
+<section id="id16">
+<h2>Returns<a class="headerlink" href="#id16" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>array</dt><dd><p>Error of the CDF.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.getErrorNull">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">getErrorNull</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dark_dic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.getErrorNull" title="Link to this definition"></a></dt>
+<dd><p>Compute the error of the null depth.</p>
+<section id="id17">
+<h2>Parameters<a class="headerlink" href="#id17" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>data_dic<span class="classifier">dict</span></dt><dd><p>Dictionary of the data from <code class="docutils literal notranslate"><span class="pre">load_data</span></code>.</p>
+</dd>
+<dt>dark_dic<span class="classifier">dict</span></dt><dd><p>Dictionary of the dark from <code class="docutils literal notranslate"><span class="pre">load_data</span></code>.</p>
+</dd>
+</dl>
+</section>
+<section id="id18">
+<h2>Returns<a class="headerlink" href="#id18" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>std_null<span class="classifier">array</span></dt><dd><p>Array of the error on the null depths.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.getErrorPDF">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">getErrorPDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_null</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_null_err</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">null_axis</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.getErrorPDF" title="Link to this definition"></a></dt>
+<dd><p>Calculate the error of the PDF. It uses the cupy library.</p>
+<section id="id19">
+<h2>Parameters<a class="headerlink" href="#id19" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>data_null<span class="classifier">array</span></dt><dd><p>Null depth measurements used to create the PDF.</p>
+</dd>
+<dt>data_null_err<span class="classifier">array</span></dt><dd><p>Error on the null depth measurements.</p>
+</dd>
+<dt>null_axis<span class="classifier">array</span></dt><dd><p>Abscissa of the CDF.</p>
+</dd>
+</dl>
+</section>
+<section id="id20">
+<h2>Returns<a class="headerlink" href="#id20" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>array</dt><dd><p>Error of the PDF.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.get_cdf">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">get_cdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.get_cdf" title="Link to this definition"></a></dt>
+<dd><p>Get the CDF of measured quantities.
+This function works on CPU and GPU.</p>
+<section id="id21">
+<h2>Parameters<a class="headerlink" href="#id21" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>data<span class="classifier">array</span></dt><dd><p>Data from which the CDF is wanted.</p>
+</dd>
+<dt>wl_scale0<span class="classifier">array</span></dt><dd><p>Wavelength axis.</p>
+</dd>
+</dl>
+</section>
+<section id="id22">
+<h2>Returns<a class="headerlink" href="#id22" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>axes<span class="classifier">2d-array</span></dt><dd><p>axis of the CDF, first axis is the wavelength.</p>
+</dd>
+<dt>cdfs<span class="classifier">2d-array</span></dt><dd><p>CDF, first axis is the wavelength.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.get_dark_cdf">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">get_dark_cdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wl_scale0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.get_dark_cdf" title="Link to this definition"></a></dt>
+<dd><p>Get the CDF for generating RV from measured dark distributions.</p>
+<section id="id23">
+<h2>Parameters<a class="headerlink" href="#id23" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>dk<span class="classifier">array-like</span></dt><dd><p>dark data.</p>
+</dd>
+<dt>wl_scale0<span class="classifier">array</span></dt><dd><p>wavelength axis.</p>
+</dd>
+</dl>
+</section>
+<section id="id24">
+<h2>Returns<a class="headerlink" href="#id24" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>dark_axis<span class="classifier">nd-array</span></dt><dd><p>axis of the CDF.</p>
+</dd>
+<dt>dark_cdf<span class="classifier">nd-array</span></dt><dd><p>CDF.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="histogram_tools.rv_generator">
+<span class="sig-prename descclassname"><span class="pre">histogram_tools.</span></span><span class="sig-name descname"><span class="pre">rv_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">absc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rvu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#histogram_tools.rv_generator" title="Link to this definition"></a></dt>
+<dd><p>Random values generator based on the CDF.</p>
+<section id="id25">
+<h2>Parameters<a class="headerlink" href="#id25" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>absc<span class="classifier">cupy array</span></dt><dd><p>Abscissa of the CDF.</p>
+</dd>
+<dt>cdf<span class="classifier">cupy array</span></dt><dd><p>Normalized arbitrary CDF to use to generate rv.</p>
+</dd>
+<dt>nsamp<span class="classifier">int</span></dt><dd><p>Number of values to generate.</p>
+</dd>
+<dt>rvu<span class="classifier">TYPE, optional</span></dt><dd><p>Use the same sequence of uniformly random values. The default is None.</p>
+</dd>
+</dl>
+</section>
+<section id="id26">
+<h2>Returns<a class="headerlink" href="#id26" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>output_samples<span class="classifier">cupy array</span></dt><dd><p>Sequence of random values following the CDF.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="generic.html" class="btn btn-neutral float-left" title="Generic" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="instrument_models.html" class="btn btn-neutral float-right" title="Instrument models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, mamartinod.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
