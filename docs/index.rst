@@ -35,8 +35,9 @@ Dependencies
 - h5py >= 3.8.0
 - emcee >= 3.1.4
 - numdifftools >= 0.9.41
+- astropy >= 5.2.1
 - cupy >= 11.5.0 (optional and not downloaded during the installation)
-- lampe >= 0.8.2 (optional and not downloaded during the installation)
+- sbi >= 0.23.2 (optional and not downloaded during the installation)
 - pytorch >= 2.1.2 (optional and not downloaded during the installation)
 
 Installation
@@ -67,14 +68,14 @@ If you have a GPU, greatly boost the performance of GRIP by using `Cupy <https:/
 
 Using Neural Posterior Estimation
 =================================
-To use the Neural Posterior Estimation technique, the libraries `LAMPE <https://github.com/probabilists/lampe>`_ 
+To use the Neural Posterior Estimation technique, the libraries `SBI <https://github.com/sbi-dev/sbi>`_ 
 and `PyTorch <https://pytorch.org/>`_ must be installed separately.
 
 GPU is not necessary to use the NPE feature of GRIP.
 
 Tutorials
 =========
-Tutorials are available on the `Github <https://github.com/mamartinod/grip>`_ page of the project.
+Tutorials are available on the `Github <https://github.com/mamartinod/grip-nulling>`_ page of the project.
 
 
 Navigation

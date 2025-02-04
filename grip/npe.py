@@ -14,13 +14,10 @@ class GripNPE(object):
     """
     This class is a framework to use the Neural Posterior Estimation technique
     with GRIP. 
-    It relies on the libraries `LAMPE <https://github.com/probabilists/lampe>`_ and
-    `PyTorch <https://pytorch.org/>`_ (thus it can run on GPU if desired).
 
     The idea is to simulate data and train the neural network to map these data with some parameters.
     During inference, real data are fed to the neural network to infer the posterior of the parameters.
     
-    The loss function is the negative log-likelihood of the NPE normalising flow (see LAMPE documentation).
 
     Parameters
     ----------
@@ -212,7 +209,7 @@ class GripNPE(object):
         Parameters
         ----------
         nb_transforms : int
-            Number of transformation in the normalising flow. It is used by the LAMPE library.
+            Number of transformation in the normalising flow.
         nb_layers : int
             Number of layers in a Transform component.
         hidden_features : int
