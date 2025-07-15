@@ -60,11 +60,31 @@ and [PyTorch](https://pytorch.org/) must be installed separately.
 
 GPU is not necessary to use the NPE feature of GRIP.
 
-# Citation
-Please cite [Martinod et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..1AM/abstract) whenever you publish data reduced with GRIP and the relevant publication(s) for the algorithms you use within GRIP.
+# Publication and citation
+The paper is published on [JATIS](dx.doi.org/10.1117/1.JATIS.11.2.028003)
+and also on [Arxiv](https://arxiv.org/abs/2407.08802).
+
+The library is also referenced on [ASCL.net](https://ascl.net/2506.009).
+
+Please use one of the following citations whenever you publish data reduced with GRIP and the relevant publication(s) for the algorithms you use within GRIP.
 They are usually mentioned in the documentation.
 
-The paper is also on [Arxiv](https://arxiv.org/abs/2407.08802).
+> @article{10.1117/1.JATIS.11.2.028003,
+> author = {Marc-Antoine Martinod and Denis Defr{\`e}re and Romain Laugier and Steve Ertel and Olivier Absil and Barnaby R. M. Norris and Bertrand Mennesson},
+> title = {{GRIP: a generic data reduction package for nulling interferometry}},
+> volume = {11},
+> journal = {Journal of Astronomical Telescopes, Instruments, and Systems},
+> number = {2},
+> publisher = {SPIE},
+> pages = {028003},
+> keywords = {data methods, software, signal processing, high contrast imaging, high angular resolution, optimization, model fitting, universal, Nulling interferometry, Calibration, Histograms, Equipment, Data modeling, Device simulation, Monte Carlo methods, Instrument modeling, Stars, Telescopes},
+> year = {2025},
+> doi = {10.1117/1.JATIS.11.2.028003},
+> URL = {https://doi.org/10.1117/1.JATIS.11.2.028003}
+> }
+
+or the [ADS reference on ASCL](https://ui.adsabs.harvard.edu/abs/2025ascl.soft06009M/exportcitation).
+
 
 # Acknowledgements
 GRIP is a development carried out in the context of the [SCIFY project](http://denis-defrere.com/scify.php). SCIFY has received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program (grant agreement No 8660).
