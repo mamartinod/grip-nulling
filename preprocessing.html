@@ -1,0 +1,257 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preprocessing &mdash; grip 1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=29a6c3e3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Plots" href="plots.html" />
+    <link rel="prev" title="NPE" href="npe.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            grip
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="grip_nested_architecture.html">Before starting, understanding the GRIP nested architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build_model.html">Build a GRIP instrument model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fitting.html">Fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generic.html">Generic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="histogram_tools.html">Histogram tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="instrument_models.html">Instrument models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="load_files.html">Load files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="npe.html">NPE</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Preprocessing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing.binning"><code class="docutils literal notranslate"><span class="pre">binning()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing.divide_chunks"><code class="docutils literal notranslate"><span class="pre">divide_chunks()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing.get_injection_and_spectrum"><code class="docutils literal notranslate"><span class="pre">get_injection_and_spectrum()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing.sortFrames"><code class="docutils literal notranslate"><span class="pre">sortFrames()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plots.html">Plots</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">grip</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Preprocessing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/preprocessing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-preprocessing">
+<span id="preprocessing"></span><h1>Preprocessing<a class="headerlink" href="#module-preprocessing" title="Link to this heading"></a></h1>
+<p>This module has preprocessing functions such as frame binning, frame sorting, list chunking.</p>
+<p>Still work in progress.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="preprocessing.binning">
+<span class="sig-prename descclassname"><span class="pre">preprocessing.</span></span><span class="sig-name descname"><span class="pre">binning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binning</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#preprocessing.binning" title="Link to this definition"></a></dt>
+<dd><p>Bin elements together.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>arr<span class="classifier">nd-array</span></dt><dd><p>Array containing data to bin.</p>
+</dd>
+<dt>binning<span class="classifier">int</span></dt><dd><p>Number of frames to bin.</p>
+</dd>
+<dt>axis<span class="classifier">int, optional</span></dt><dd><p>Axis along which the frames are binned. The default is 0.</p>
+</dd>
+<dt>avg<span class="classifier">bool, optional</span></dt><dd><p>if <code class="docutils literal notranslate"><span class="pre">True</span></code>, the method returns the average of the                binned frame. Otherwise, return its sum. The default is False.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>arr<span class="classifier">nd-array</span></dt><dd><p>Binned array.</p>
+</dd>
+<dt>cropped_idx<span class="classifier">array</span></dt><dd><p>Index of the kept frames.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="preprocessing.divide_chunks">
+<span class="sig-prename descclassname"><span class="pre">preprocessing.</span></span><span class="sig-name descname"><span class="pre">divide_chunks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">l</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#preprocessing.divide_chunks" title="Link to this definition"></a></dt>
+<dd><p>Yield successive n-sized chunks from l.</p>
+<section id="id1">
+<h2>Parameters<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>l<span class="classifier">int</span></dt><dd><p>Size of the list to chunk.</p>
+</dd>
+<dt>n<span class="classifier">int</span></dt><dd><p>Size of a chunk of the list.</p>
+</dd>
+</dl>
+</section>
+<section id="yields">
+<h2>Yields<a class="headerlink" href="#yields" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>yield</dt><dd><p>Generator of the chunks.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="preprocessing.get_injection_and_spectrum">
+<span class="sig-prename descclassname"><span class="pre">preprocessing.</span></span><span class="sig-name descname"><span class="pre">get_injection_and_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">photoA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">photoB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wl_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wl_bounds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#preprocessing.get_injection_and_spectrum" title="Link to this definition"></a></dt>
+<dd><p>Get the distributions of the broadband injections and the spectra of        beams A and B.</p>
+<section id="id2">
+<h2>Parameters<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>photoA<span class="classifier">array-like</span></dt><dd><p>Values of the photometric output of beam A.</p>
+</dd>
+<dt>photoB<span class="classifier">array-like</span></dt><dd><p>Values of the photometric output of beam B.</p>
+</dd>
+<dt>wl_scale<span class="classifier">array-like</span></dt><dd><p>Wavelength of the spectra in nm.</p>
+</dd>
+<dt>wl_bounds<span class="classifier">2-tuple, optional</span></dt><dd><p>Boundaries between which the spectra are extracted.            The wavelengths are expressed in nm.</p>
+</dd>
+</dl>
+</section>
+<section id="id3">
+<h2>Returns<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>2-tuple of 2d-array</dt><dd><p>The first element contains the broadband                injection of beams A and B, respectively. The second element                contains the spectra of beams A and B, respectively.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="preprocessing.sortFrames">
+<span class="sig-prename descclassname"><span class="pre">preprocessing.</span></span><span class="sig-name descname"><span class="pre">sortFrames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kw_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_frames_to_bin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_minus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_plus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">which_null</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#preprocessing.sortFrames" title="Link to this definition"></a></dt>
+<dd><p>Perform sigmal-clipping to remove frames non-normally distributed        phase fluctuations.</p>
+<p>Sigma-clipping to filter the frames which phase is not Gaussian
+(e.g. because of LWE).
+Fluxes of the null and antinull outputs are analysed in two steps.
+In the first step, for a given output, values between two thresholds are
+kept.
+The <cite>base</cite> is the upper bound for the antinull output or the lower bound
+for the null output.
+The base is defined as the median of the measurements which lower than
+the quantile (typically 10%) of the total sample in the null output,
+and upper for the antinull output.
+The second threshold is defined as the <cite>base</cite> plus or minus the standard
+deviation of the global sample wieghted by a coefficient.
+In the second step, frames for which both fluxes are kept are saved,
+the others are discarded.</p>
+<section id="id4">
+<h2>Parameters<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>dic_data<span class="classifier">dict</span></dt><dd><p>Contains the extracted data from files by the function <code class="docutils literal notranslate"><span class="pre">load_data</span></code>.</p>
+</dd>
+<dt>kw_list: list-like of two elements</dt><dd><p>The 2 keywords of the data from <cite>dic_data</cite> to use.</p>
+</dd>
+<dt>nb_frames_to_bin<span class="classifier">int</span></dt><dd><p>Number of frames to bin before applying the filter.            It is used to increase the SNR and exhibit the phase noise over            the detector noise.</p>
+</dd>
+<dt>quantile<span class="classifier">float between 0 and 1</span></dt><dd><p>First quantile taken to determine the <cite>base</cite> threshold.</p>
+</dd>
+<dt>factor_minus<span class="classifier">float</span></dt><dd><p>Factor applied to the std of the null flux to            determine the second threshold.</p>
+</dd>
+<dt>factor_plus<span class="classifier">float</span></dt><dd><p>Factor applied to the std of the antinull flux            to determine the second threshold.</p>
+</dd>
+<dt>which_null<span class="classifier">string</span></dt><dd><p>Indicates on which baseline the filter is applied.</p>
+</dd>
+<dt>starname<span class="classifier">string</span></dt><dd><p>Name of the star.</p>
+</dd>
+<dt>plot<span class="classifier">bool, optional</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it displays the time serie of the binned frames,            the thresholds and highlights the filtered frames.            The default is False. The default is False.</p>
+</dd>
+<dt>save_path<span class="classifier">string, optional</span></dt><dd><p>Path where the plots is saved in png format (dpi = 150). The default is ‘’.</p>
+</dd>
+</dl>
+</section>
+<section id="id5">
+<h2>Returns<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>new_dic<span class="classifier">dict</span></dt><dd><p>New dictionary with only the saved data points.</p>
+</dd>
+<dt>idx_good_frames<span class="classifier">array</span></dt><dd><p>Index of the kept frames in the input dictionary.</p>
+</dd>
+<dt>intensities: 2-tuple</dt><dd><p>Arrays of fluxes in null and anti-null outputs.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="npe.html" class="btn btn-neutral float-left" title="NPE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="plots.html" class="btn btn-neutral float-right" title="Plots" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, mamartinod.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

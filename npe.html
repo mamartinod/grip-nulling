@@ -1,0 +1,338 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NPE &mdash; grip 1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=29a6c3e3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Preprocessing" href="preprocessing.html" />
+    <link rel="prev" title="Load files" href="load_files.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            grip
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="grip_nested_architecture.html">Before starting, understanding the GRIP nested architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build_model.html">Build a GRIP instrument model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fitting.html">Fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generic.html">Generic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="histogram_tools.html">Histogram tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="instrument_models.html">Instrument models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="load_files.html">Load files</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">NPE</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#npe.GripNPE"><code class="docutils literal notranslate"><span class="pre">GripNPE</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#npe.GripNPE.create_train_set"><code class="docutils literal notranslate"><span class="pre">GripNPE.create_train_set()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#npe.GripNPE.draw_params"><code class="docutils literal notranslate"><span class="pre">GripNPE.draw_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#npe.GripNPE.generate_batch"><code class="docutils literal notranslate"><span class="pre">GripNPE.generate_batch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#npe.GripNPE.inference_on_data"><code class="docutils literal notranslate"><span class="pre">GripNPE.inference_on_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#npe.GripNPE.set_nn"><code class="docutils literal notranslate"><span class="pre">GripNPE.set_nn()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#npe.GripNPE.simulator"><code class="docutils literal notranslate"><span class="pre">GripNPE.simulator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#npe.GripNPE.train_nn"><code class="docutils literal notranslate"><span class="pre">GripNPE.train_nn()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plots.html">Plots</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">grip</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">NPE</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/npe.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-npe">
+<span id="npe"></span><h1>NPE<a class="headerlink" href="#module-npe" title="Link to this heading"></a></h1>
+<p>This module contains the functions about using Neural Posterior Estimation for self-calibration.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="npe.GripNPE">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">npe.</span></span><span class="sig-name descname"><span class="pre">GripNPE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wl_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cuda</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#npe.GripNPE" title="Link to this definition"></a></dt>
+<dd><p>This class is a framework to use the Neural Posterior Estimation technique
+with GRIP.</p>
+<p>The idea is to simulate data and train the neural network to map these data with some parameters.
+During inference, real data are fed to the neural network to infer the posterior of the parameters.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>wl_scale<span class="classifier">1d-array</span></dt><dd><p>Wavelength scale.</p>
+</dd>
+<dt>func_model<span class="classifier">function or callable</span></dt><dd><p>Function formatting the data to be compared to a model (e.g. histogram or power density spectrum).</p>
+</dd>
+<dt>func_args<span class="classifier">list, optional</span></dt><dd><p>Arguments used or transmitted by <cite>func_model</cite>. The default is ().</p>
+</dd>
+<dt>func_kwargs<span class="classifier">dict, optional</span></dt><dd><p>Dictionary of keywords used or transmitted by <cite>func_model</cite>. The default is {}.</p>
+</dd>
+<dt>use_cuda<span class="classifier">bool, optional</span></dt><dd><p>Use cuda for training the neural network or inferring, providing CUDA is available. The default is True.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
+<p>None.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="npe.GripNPE.create_train_set">
+<span class="sig-name descname"><span class="pre">create_train_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nb_batch_per_epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_params_theta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#npe.GripNPE.create_train_set" title="Link to this definition"></a></dt>
+<dd><p>Generate data set to train the neural network.
+It creates several batched data to use in one training epoch.</p>
+<section id="id1">
+<h3>Parameters<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>nb_batch_per_epoch<span class="classifier">int</span></dt><dd><p>Number of batches to train the neural network during one epoch.</p>
+</dd>
+<dt>batch_size<span class="classifier">int</span></dt><dd><p>Number of simulated data sequence in a batch.</p>
+</dd>
+<dt>dist_type<span class="classifier">list of strings</span></dt><dd><p>Define the distribution to choose for each parameter. 
+Available keywords are <em>normal</em> (for normal distribution) or <em>uniform</em> (for uniform distribution).</p>
+</dd>
+<dt>dist_params_theta<span class="classifier">List of tuples</span></dt><dd><p>List of parameters to use to generate random values from a distribution defined by <cite>dist_type</cite>.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h3>Returns<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>train_data<span class="classifier">nd-array</span></dt><dd><p>Dataset to train the neural network of shape <cite>(nb_batch_per_epoch, batch_size, data_size)</cite>.</p>
+</dd>
+<dt>train_params<span class="classifier">nd-array</span></dt><dd><p>Associated parameters that have created <cite>train_data</cite> of shape <cite>(nb_batch_per_epoch, batch_size, number_of_params)</cite>.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npe.GripNPE.draw_params">
+<span class="sig-name descname"><span class="pre">draw_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dist_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_params_theta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#npe.GripNPE.draw_params" title="Link to this definition"></a></dt>
+<dd><p>Generate parameters sets to simulate data. These parameters are the one
+to be inferred by the NN.</p>
+<section id="id3">
+<h3>Parameters<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>dist_type<span class="classifier">list of strings</span></dt><dd><p>Define the distribution to choose for each parameter. 
+Available keywords are <em>normal</em> (for normal distribution) or <em>uniform</em> (for uniform distribution).
+If the keyword is not recognised, a uniform distribution is considered.</p>
+</dd>
+<dt>dist_params_theta<span class="classifier">List of tuples</span></dt><dd><p>List of parameters to use to generate random values from a distribution defined by <cite>dist_type</cite>.</p>
+</dd>
+</dl>
+</section>
+<section id="id4">
+<h3>Returns<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>params<span class="classifier">array-like</span></dt><dd><p>Parameters generated.</p>
+</dd>
+</dl>
+</section>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h3>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dist_type</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;uniform&#39;</span><span class="p">,</span> <span class="s1">&#39;normal&#39;</span><span class="p">,</span> <span class="s1">&#39;uniform&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dist_params_theta</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span> <span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">draw_params</span><span class="p">(</span><span class="n">dist_type</span><span class="p">,</span> <span class="n">dist_params_theta</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npe.GripNPE.generate_batch">
+<span class="sig-name descname"><span class="pre">generate_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_params_theta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#npe.GripNPE.generate_batch" title="Link to this definition"></a></dt>
+<dd><p>Generate batch of data to train de neural network and their associated parameters.</p>
+<section id="id5">
+<h3>Parameters<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>batch_size<span class="classifier">int</span></dt><dd><p>Number of simulated data sequence in a batch.</p>
+</dd>
+<dt>dist_type<span class="classifier">list of strings</span></dt><dd><p>Define the distribution to choose for each parameter. 
+Available keywords are <em>normal</em> (for normal distribution) or <em>uniform</em> (for uniform distribution).</p>
+</dd>
+<dt>dist_params_theta<span class="classifier">List of tuples</span></dt><dd><p>List of parameters to use to generate random values from a distribution defined by <cite>dist_type</cite>.</p>
+</dd>
+</dl>
+</section>
+<section id="id6">
+<h3>Returns<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>batched_data<span class="classifier">array</span></dt><dd><p>Batched simulated data of shape (batch_size, *data.shape).</p>
+</dd>
+<dt>batched_theta<span class="classifier">array</span></dt><dd><p>Batched parameters to infer of shape (batch_size, number of parameters).</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npe.GripNPE.inference_on_data">
+<span class="sig-name descname"><span class="pre">inference_on_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_to_inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_sample</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#npe.GripNPE.inference_on_data" title="Link to this definition"></a></dt>
+<dd><p>Infer data to deduce the posterior of the parameters with the trained neural network.</p>
+<section id="id7">
+<h3>Parameters<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>data_to_inf<span class="classifier">nd-array</span></dt><dd><p>Data to infer. They must be in the same shape and format as the simulated data used to train the neural network.</p>
+</dd>
+<dt>nb_sample: int</dt><dd><p>Number of samples to generate from the surrogate posteriors of the parameters.</p>
+</dd>
+</dl>
+</section>
+<section id="id8">
+<h3>Returns<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>samples<span class="classifier">nd-array</span></dt><dd><p>Samples of the inferred parameters, which distributions are their posteriors. Shape is (nb elements, nb parameters).</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npe.GripNPE.set_nn">
+<span class="sig-name descname"><span class="pre">set_nn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nb_transforms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_features</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#npe.GripNPE.set_nn" title="Link to this definition"></a></dt>
+<dd><p>Create the normalising flow to infer data.
+The flow is a <em>masked autoregressive flow</em>.</p>
+<section id="id9">
+<h3>Parameters<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>nb_transforms<span class="classifier">int</span></dt><dd><p>Number of transformation in the normalising flow.</p>
+</dd>
+<dt>nb_layers<span class="classifier">int</span></dt><dd><p>Number of layers in a Transform component.</p>
+</dd>
+<dt>hidden_features<span class="classifier">int</span></dt><dd><p>Number of features out of each layer.</p>
+</dd>
+</dl>
+</section>
+<section id="attributes">
+<h3>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h3>
+<p>self.maf_estimator : neural network estimator flow</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npe.GripNPE.simulator">
+<span class="sig-name descname"><span class="pre">simulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#npe.GripNPE.simulator" title="Link to this definition"></a></dt>
+<dd><p>Simulate the data to train the neural network.</p>
+<section id="id10">
+<h3>Parameters<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>params<span class="classifier">array-like</span></dt><dd><p>Parameters to infer of the model to fit on the data.</p>
+</dd>
+</dl>
+</section>
+<section id="id11">
+<h3>Returns<a class="headerlink" href="#id11" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>out<span class="classifier">1d-array</span></dt><dd><p>Modelled data.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npe.GripNPE.train_nn">
+<span class="sig-name descname"><span class="pre">train_nn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nb_epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cluster.png'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#npe.GripNPE.train_nn" title="Link to this definition"></a></dt>
+<dd><p>Train the neural network following the Neural Posterior Estimation flow.</p>
+<section id="id12">
+<h3>Parameters<a class="headerlink" href="#id12" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>nb_epoch<span class="classifier">int</span></dt><dd><p>Number of epochs to train the neural network.</p>
+</dd>
+<dt>show_plot<span class="classifier">bool, optional</span></dt><dd><p>Show the learning curve. The default is False.</p>
+</dd>
+<dt>save_fig<span class="classifier">bool, optional</span></dt><dd><p>Save the learning curve. The default is False.</p>
+</dd>
+<dt>save_path<span class="classifier">string, optional</span></dt><dd><p>Path to save the figure. This path must end by the name of the file and its extension. The default is ‘cluster.png’. The figure is saved as a PNG with dpi=150.</p>
+</dd>
+</dl>
+</section>
+<section id="id13">
+<h3>Returns<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>training_loss<span class="classifier">1d-array</span></dt><dd><p>Values of the learning curve. The size of the array is the number of epochs.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="load_files.html" class="btn btn-neutral float-left" title="Load files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="preprocessing.html" class="btn btn-neutral float-right" title="Preprocessing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, mamartinod.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

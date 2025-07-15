@@ -1,0 +1,181 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Before starting, understanding the GRIP nested architecture &mdash; grip 1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=29a6c3e3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Build a GRIP instrument model" href="build_model.html" />
+    <link rel="prev" title="GRIP documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            grip
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Before starting, understanding the GRIP nested architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build_model.html">Build a GRIP instrument model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fitting.html">Fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generic.html">Generic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="histogram_tools.html">Histogram tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="instrument_models.html">Instrument models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="load_files.html">Load files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="npe.html">NPE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plots.html">Plots</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">grip</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Before starting, understanding the GRIP nested architecture</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/grip_nested_architecture.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="before-starting-understanding-the-grip-nested-architecture">
+<h1>Before starting, understanding the GRIP nested architecture<a class="headerlink" href="#before-starting-understanding-the-grip-nested-architecture" title="Link to this heading"></a></h1>
+<p>GRIP is a tool box, designed to be flexible as a requirement to be compatible with any nulling data.
+It is also simulation-based, by using a model of the instrument (also named as null depth estimator) to reproduce sequence of null depths which statistical distribution is compared to the one of the measurements.</p>
+<p>It is structured in three layers:
+- top: functions calling the fitting algorithm (e.g. likelihood, least squares or MCMC)
+- middle: functions calling the cost function (e.g. binomial likelihood, $chi^2$, posterior) and the builder of the model (namely <cite>grip.create_histogram_model</cite>)
+- bottom: the instrument model (e.g. <cite>grip.lbti_model</cite>).</p>
+<p>The bottom layer is brought by the user and this tutorial explains how to build a custom model in the second part.</p>
+<p>From these layers, it is clear that top functions not only to need to pass their own arguments (and keywords) but also those of the middle and the bottom layers.
+To do so, arguments of the middle and bottom layers are put in a list or equivalent.
+This list is passed to the middle layer which extracts its own arguments and pass the others to the bottom layer.
+The challenge is that the bottom layer has an arbitrary number of parameters of any type, solely constrained by the user, and GRIP needs to get an interface to this <strong>user-based</strong> layer.</p>
+<p>In addition, to stay in the trend of the other fitting algorithm and to make a clean interface with third-party packages, only the constants of the layers are embedded into lists while the quantities of the problem (e.g. the histograms, the bins, the parameters to fit, the error bars) are explicit arguments in the different layers.</p>
+<p>Let’s have a look of the different layers, starting with the bottom
+In the tutorial #3, we have fitted LBTI data (bottom layer) with a likelihood as a cost function (middle layer) run by a <cite>scipy.optimize.minimize</cite> wrapper (top layer).</p>
+<p>The code looks like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">grip</span><span class="o">.</span><span class="n">minimize_fit</span><span class="p">(</span><span class="n">grip</span><span class="o">.</span><span class="n">neg_log_multinomial</span><span class="p">,</span> <span class="n">grip</span><span class="o">.</span><span class="n">create_histogram_model</span><span class="p">,</span> <span class="n">initial_guess</span><span class="p">,</span> \
+   <span class="n">null_axis</span><span class="p">,</span> <span class="n">null_pdf</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds_fit</span><span class="p">,</span> <span class="n">diff_step</span><span class="o">=</span><span class="n">diffstep_lklh</span><span class="p">,</span> \
+   <span class="n">func_args</span><span class="o">=</span><span class="n">cost_fun_args</span><span class="p">,</span> <span class="n">func_kwargs</span><span class="o">=</span><span class="n">cost_fun_kwargs</span><span class="p">)</span>\
+</pre></div>
+</div>
+<p><code class="code highlight python docutils literal highlight-python"><span class="n">grip</span><span class="o">.</span><span class="n">minimize_fit</span></code> is the wrapper of <code class="code highlight python docutils literal highlight-python"><span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span></code> which takes for its own arguments all what is displayed but the last two.
+In particular, we recognize the cost function <code class="code highlight python docutils literal highlight-python"><span class="n">grip</span><span class="o">.</span><span class="n">neg_log_multinomial</span></code> and the histogram builder <code class="code highlight python docutils literal highlight-python"><span class="n">grip</span><span class="o">.</span><span class="n">create_histogram_model</span></code>, both to be called in the middle layer.
+<code class="code highlight python docutils literal highlight-python"><span class="n">initial_guess</span></code> is both a requirement of <code class="code highlight python docutils literal highlight-python"><span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span></code> and an argument for the functions in the middle and bottom layers.</p>
+<p><code class="code highlight python docutils literal highlight-python"><span class="n">func_args</span><span class="o">=</span><span class="n">cost_fun_args</span></code> and <code class="code highlight python docutils literal highlight-python"><span class="n">func_kwargs</span><span class="o">=</span><span class="n">cost_fun_kwargs</span></code> are arguments useless for <code class="code highlight python docutils literal highlight-python"><span class="n">grip</span><span class="o">.</span><span class="n">minimize_fit</span></code> but critical for <code class="code highlight python docutils literal highlight-python"><span class="n">grip</span><span class="o">.</span><span class="n">neg_log_multinomial</span></code> and <code class="code highlight python docutils literal highlight-python"><span class="n">grip</span><span class="o">.</span><span class="n">create_histogram_model</span></code>.</p>
+<p>And <code class="code highlight python docutils literal highlight-python"><span class="n">cost_fun_args</span></code> is defined as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cost_fun_args</span> <span class="o">=</span> <span class="p">(</span><span class="n">wl_scale</span><span class="p">,</span> <span class="n">grip</span><span class="o">.</span><span class="n">lbti_model</span><span class="p">,</span> <span class="n">instrument_constants</span><span class="p">,</span> <span class="n">rvu_opd</span><span class="p">,</span> <span class="n">cdfs_top</span><span class="p">,</span> <span class="n">rvus_top</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In <code class="code highlight python docutils literal highlight-python"><span class="n">cost_fun_args</span></code>, we recognise the arguments needed by <code class="code highlight python docutils literal highlight-python"><span class="n">grip</span><span class="o">.</span><span class="n">neg_log_multinomial</span></code>.
+In particular, the bottom layer is part of the tuple:</p>
+<ul class="simple">
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">grip</span><span class="o">.</span><span class="n">lbti_model</span></code>: the instrument model, which forms the bottom layer of GRIP</p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">instrument_constants</span></code>: the constants (i.e. non-random values) of the model.</p></li>
+</ul>
+<p>This means that when the middle layer called the bottom layer, it uses these parameters, along with the one generated by the histogram builder.</p>
+<p><code class="code highlight python docutils literal highlight-python"><span class="n">cost_fun_kwargs</span></code> is defined as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cost_fun_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;use_this_model&#39;</span><span class="p">:</span><span class="n">out</span><span class="p">,</span> <span class="s1">&#39;n_samp_per_loop&#39;</span><span class="p">:</span><span class="n">n_samp_per_loop</span><span class="p">,</span> <span class="s1">&#39;nloop&#39;</span><span class="p">:</span><span class="n">nloop</span><span class="p">,</span> <span class="s1">&#39;verbose&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>We recognise a keyword for the cost function <code class="code highlight python docutils literal highlight-python"><span class="n">grip</span><span class="o">.</span><span class="n">neg_log_multinomial</span></code>: <code class="code highlight python docutils literal highlight-python"><span class="n">use_this_model</span></code>.
+And the others are for the histogram builder <code class="code highlight python docutils literal highlight-python"><span class="n">create_histogram_model</span><span class="p">(</span><span class="n">params_to_fit</span><span class="p">,</span> <span class="n">xbins</span><span class="p">,</span> <span class="n">wl_scale0</span><span class="p">,</span> <span class="n">instrument_model</span><span class="p">,</span> <span class="n">instrument_args</span><span class="p">,</span> <span class="n">rvu_forfit</span><span class="p">,</span> <span class="n">cdfs</span><span class="p">,</span> <span class="n">rvus</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code> so that:</p>
+<ul class="simple">
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">params_to_fit</span><span class="o">=</span><span class="n">initial_guess</span><span class="o">=</span><span class="p">[</span><span class="n">an</span><span class="p">,</span> <span class="n">mu_opd</span><span class="p">,</span> <span class="n">sig_opd</span><span class="p">]</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">xbins</span><span class="o">=</span><span class="n">null_axis</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">wl_scale0</span><span class="o">=</span><span class="n">cost_fun_args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">instrument_model</span><span class="o">=</span><span class="n">cost_fun_args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">=</span><span class="n">grip</span><span class="o">.</span><span class="n">lbti_model</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">instrument_args</span><span class="o">=</span><span class="n">cost_fun_args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">=</span><span class="n">instrument_constants</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">rvu_forfit</span><span class="o">=</span><span class="n">cost_fun_args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">=</span><span class="n">rvu_opd</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">cdfs</span><span class="o">=</span><span class="n">cost_fun_args</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">=</span><span class="n">cdfs_top</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">rvus</span><span class="o">=</span><span class="n">cost_fun_args</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">=</span><span class="n">rvus_top</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">kwargs</span><span class="o">=</span><span class="n">cost_fun_kwargs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cost_fun_kwargs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">and</span> <span class="n">cost_fun_kwargs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span></code></p></li>
+</ul>
+<p>and in the bottom layer, we have <code class="code highlight python docutils literal highlight-python"><span class="n">lbti_model</span><span class="p">(</span><span class="n">na</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">wl_idx</span><span class="p">,</span> <span class="n">spec_chan_width</span><span class="p">,</span> <span class="n">phase_bias</span><span class="p">,</span> <span class="n">opd</span><span class="p">,</span> <span class="n">IA</span><span class="p">,</span> <span class="n">IB</span><span class="p">,</span> <span class="n">thermal_bckg</span><span class="p">,</span> <span class="n">sigma_eps</span><span class="p">)</span></code>:</p>
+<ul class="simple">
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">na</span><span class="o">=</span><span class="n">initial_guess</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">wavelength</span><span class="o">=</span><span class="n">cost_fun_args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">wl_idx</span><span class="o">=</span></code> argument created by <code class="code highlight python docutils literal highlight-python"><span class="n">create_histogram_model</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">spec_chan_width</span><span class="o">=</span><span class="n">instrument_constants</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">phase_bias</span><span class="o">=</span><span class="n">instrument_constants</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">opd</span><span class="o">=</span></code> sequence of random values generated thanks to <code class="code highlight python docutils literal highlight-python"><span class="n">initial_guess</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">=</span><span class="n">mu_opd</span></code> and <code class="code highlight python docutils literal highlight-python"><span class="n">initial_guess</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">=</span><span class="n">sig_opd</span></code> and <code class="code highlight python docutils literal highlight-python"><span class="n">rvu_forfit</span><span class="o">=</span><span class="n">rvu_opd</span></code></p></li>
+<li><p><code class="code highlight python docutils literal highlight-python"><span class="n">IA</span></code>, <code class="code highlight python docutils literal highlight-python"><span class="n">IB</span></code>, <code class="code highlight python docutils literal highlight-python"><span class="n">thermal_bckg</span></code> and <code class="code highlight python docutils literal highlight-python"><span class="n">sigma_eps</span></code> are sequence of random values generated thanks to <code class="code highlight python docutils literal highlight-python"><span class="n">cdfs</span><span class="o">=</span><span class="n">cost_fun_args</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">=</span><span class="n">cdfs_top</span></code> and <code class="code highlight python docutils literal highlight-python"><span class="n">rvus</span><span class="o">=</span><span class="n">cost_fun_args</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">=</span><span class="n">rvus_top</span></code>.</p></li>
+</ul>
+<p>This structure is an answer to this challenging interface issue between user-based functions, third-party packages and data with different structures.
+If a simpler solution is to be found, it will be implemented as a major update of GRIP and backward compatibility may not be guaranted.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="GRIP documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="build_model.html" class="btn btn-neutral float-right" title="Build a GRIP instrument model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, mamartinod.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
